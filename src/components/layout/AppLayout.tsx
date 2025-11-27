@@ -19,7 +19,7 @@ const AppLayout: React.FC = () => {
       : 'border-transparent text-slate-300 hover:border-slate-600 hover:bg-slate-900/60')
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-950 text-slate-50 relative overflow-hidden pb-20 md:pb-0">
       {/* Fondo musical con overlay y gradientes suaves */}
       <div className="absolute inset-0 -z-10">
         <img src="/brand/bg-piano.svg" alt="fondo musical" className="w-full h-full object-cover opacity-30"/>
@@ -27,8 +27,8 @@ const AppLayout: React.FC = () => {
       <div className="background-vivid" />
 
       <div className="relative min-h-screen flex flex-col">
-        {/* HEADER */}
-        <header className="relative border-b-2 border-purple-500/30 bg-gradient-to-r from-slate-950 via-purple-950/20 to-slate-950 backdrop-blur-xl shadow-xl shadow-purple-500/10 overflow-hidden">
+        {/* HEADER - Solo visible en Desktop (md+) */}
+        <header className="hidden md:block relative border-b-2 border-purple-500/30 bg-gradient-to-r from-slate-950 via-purple-950/20 to-slate-950 backdrop-blur-xl shadow-xl shadow-purple-500/10 overflow-hidden">
           {/* Efectos de fondo */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/5 to-transparent animate-[shimmer_4s_ease-in-out_infinite]" />
           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-400/60 to-transparent" />
@@ -145,12 +145,101 @@ const AppLayout: React.FC = () => {
           </div>
         </header>
 
+        {/* MOBILE HEADER - Solo visible en móvil */}
+        <header className="md:hidden sticky top-0 z-40 border-b-2 border-purple-500/30 bg-gradient-to-r from-slate-950 via-purple-950/20 to-slate-950 backdrop-blur-xl shadow-xl shadow-purple-500/10">
+          <div className="flex items-center justify-between px-3 py-2.5">
+            {location.pathname !== '/app' && (
+              <button
+                onClick={handleBack}
+                className="group relative px-2.5 py-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-700 hover:border-purple-500/50 text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-lg flex items-center gap-1"
+              >
+                <span className="group-hover:-translate-x-1 transition-transform">←</span>
+              </button>
+            )}
+            
+            <div className="flex items-center gap-2 flex-1 justify-center">
+              <img 
+                src="/brand/note.svg" 
+                alt="HolySong" 
+                className="w-7 h-7 filter brightness-0 invert" 
+              />
+              <p className="text-base font-black bg-gradient-to-r from-purple-300 via-pink-300 to-teal-300 bg-clip-text text-transparent">
+                HolySong
+              </p>
+            </div>
+            
+            {user && (
+              <button
+                onClick={signOut}
+                className="relative px-2.5 py-2 rounded-lg bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-xs font-black transition-all hover:scale-110 active:scale-95 border border-red-400/50 shadow-lg shadow-red-500/20"
+              >
+                🚪
+              </button>
+            )}
+          </div>
+        </header>
+
         {/* CONTENIDO */}
-        <main className="flex-1 px-2 sm:px-3 md:px-8 py-3 sm:py-4 md:py-6 fade-in">
+        <main className="flex-1 px-3 sm:px-4 md:px-8 py-4 md:py-6 fade-in">
           <Outlet />
         </main>
 
-        <footer className="border-t border-slate-900 bg-slate-950/80 text-[9px] sm:text-[11px] text-slate-500 py-2 px-2 sm:px-4 md:px-8">
+        {/* BOTTOM NAVIGATION - Solo visible en móvil */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t-2 border-purple-500/30 bg-gradient-to-r from-slate-950 via-purple-950/20 to-slate-950 backdrop-blur-xl shadow-[0_-4px_20px_rgba(124,58,237,0.3)]">
+          <div className="flex justify-around items-center px-2 py-2">
+            <NavLink to="/app" end className={({ isActive }) =>
+              'flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all active:scale-95 ' +
+              (isActive
+                ? 'bg-gradient-to-br from-teal-600/30 to-teal-700/20 text-teal-300'
+                : 'text-slate-400 hover:text-slate-200')
+            }>
+              <span className="text-2xl">🏠</span>
+              <span className="text-[10px] font-bold">Inicio</span>
+            </NavLink>
+            
+            <NavLink to="/app/import" className={({ isActive }) =>
+              'flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all active:scale-95 ' +
+              (isActive
+                ? 'bg-gradient-to-br from-purple-600/30 to-purple-700/20 text-purple-300'
+                : 'text-slate-400 hover:text-slate-200')
+            }>
+              <span className="text-2xl">📥</span>
+              <span className="text-[10px] font-bold">Importar</span>
+            </NavLink>
+            
+            <NavLink to="/app/library" className={({ isActive }) =>
+              'flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all active:scale-95 ' +
+              (isActive
+                ? 'bg-gradient-to-br from-teal-600/30 to-teal-700/20 text-teal-300'
+                : 'text-slate-400 hover:text-slate-200')
+            }>
+              <span className="text-2xl">📚</span>
+              <span className="text-[10px] font-bold">Biblioteca</span>
+            </NavLink>
+            
+            <NavLink to="/app/folders" className={({ isActive }) =>
+              'flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all active:scale-95 ' +
+              (isActive
+                ? 'bg-gradient-to-br from-pink-600/30 to-pink-700/20 text-pink-300'
+                : 'text-slate-400 hover:text-slate-200')
+            }>
+              <span className="text-2xl">📁</span>
+              <span className="text-[10px] font-bold">Carpetas</span>
+            </NavLink>
+            
+            <NavLink to="/app/live" className={({ isActive }) =>
+              'flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all active:scale-95 ' +
+              (isActive
+                ? 'bg-gradient-to-br from-purple-600/30 to-purple-700/20 text-purple-300'
+                : 'text-slate-400 hover:text-slate-200')
+            }>
+              <span className="text-2xl">🎸</span>
+              <span className="text-[10px] font-bold">Live</span>
+            </NavLink>
+          </div>
+        </nav>
+
+        <footer className="hidden md:block border-t border-slate-900 bg-slate-950/80 text-[9px] sm:text-[11px] text-slate-500 py-2 px-2 sm:px-4 md:px-8">
           <div className="flex items-center justify-between gap-1 sm:gap-2">
             <span className="hidden sm:inline">Autor: Prokopczuk, Axel</span>
             <span className="sm:hidden">A. Prokopczuk</span>

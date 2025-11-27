@@ -41,9 +41,9 @@ const HomePage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-4 md:space-y-6">
       {/* HERO con gradiente y animaciones */}
-      <div className="relative rounded-2xl sm:rounded-3xl border border-purple-500/30 bg-gradient-to-br from-slate-950 via-purple-950/20 to-slate-950 p-4 sm:p-6 md:p-12 overflow-hidden shadow-2xl shadow-purple-500/10">
+      <div className="relative rounded-xl md:rounded-3xl border border-purple-500/30 bg-gradient-to-br from-slate-950 via-purple-950/20 to-slate-950 p-5 md:p-12 overflow-hidden shadow-2xl shadow-purple-500/10">
         {/* Efectos de fondo */}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/5 to-transparent animate-[shimmer_4s_ease-in-out_infinite]" />
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-400/60 to-transparent" />
@@ -65,39 +65,39 @@ const HomePage: React.FC = () => {
         <div className="absolute bottom-6 left-6 w-2 h-2 rounded-full bg-teal-400 animate-ping opacity-60" style={{ animationDelay: '0.5s' }} />
         <div className="absolute top-1/2 right-1/3 w-2 h-2 rounded-full bg-pink-400 animate-ping opacity-60" style={{ animationDelay: '1s' }} />
         
-        <div className="space-y-4 fade-in relative z-10">
-          <div className="flex items-center gap-3">
-            <div className="px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/40 animate-pulse">
-              <p className="text-[10px] tracking-[0.25em] text-purple-300 uppercase font-bold">HOLYSONG • PARA MÚSICOS</p>
+        <div className="space-y-5 fade-in relative z-10">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="px-2.5 py-1 rounded-full bg-purple-500/20 border border-purple-400/40 animate-pulse">
+              <p className="text-[9px] md:text-[10px] tracking-[0.2em] md:tracking-[0.25em] text-purple-300 uppercase font-bold">HOLYSONG • PARA MÚSICOS</p>
             </div>
-            <span className="text-2xl animate-bounce-slow">🎵</span>
+            <span className="text-xl md:text-2xl animate-bounce-slow">🎵</span>
           </div>
           
-          <h1 className="text-xl sm:text-2xl md:text-5xl font-black bg-gradient-to-r from-purple-200 via-pink-200 to-teal-200 bg-clip-text text-transparent leading-tight">
+          <h1 className="text-2xl md:text-5xl font-black bg-gradient-to-r from-purple-200 via-pink-200 to-teal-200 bg-clip-text text-transparent leading-tight">
             Tu control para acordes, letras y sesiones en vivo
           </h1>
           
-          <p className="text-xs sm:text-sm md:text-base text-slate-300 max-w-2xl leading-relaxed">
+          <p className="text-sm md:text-base text-slate-300 max-w-2xl leading-relaxed">
             🎸 Buscá canciones • 📁 Armá carpetas por servicio • 🎚️ Sincronizá al equipo en tiempo real
           </p>
           
-          <div className="flex flex-wrap items-center gap-3 pt-2">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 pt-2">
             <button
               onClick={() => navigate('/app/library')}
-              className="group relative px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-sm font-bold transition-all hover:scale-105 active:scale-95 border-2 border-purple-400/60 shadow-lg shadow-purple-500/30 overflow-hidden"
+              className="group relative w-full md:w-auto px-6 py-3.5 md:py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-base md:text-sm font-bold transition-all hover:scale-105 active:scale-95 border-2 border-purple-400/60 shadow-lg shadow-purple-500/30 overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
-              <span className="relative flex items-center gap-2">
-                <span>📚</span>
+              <span className="relative flex items-center justify-center gap-2">
+                <span className="text-xl md:text-base">📚</span>
                 Explorar Biblioteca
               </span>
             </button>
             
             <button
               onClick={() => navigate('/app/live')}
-              className="px-6 py-3 rounded-xl bg-slate-900/80 hover:bg-slate-800 border-2 border-teal-500/50 hover:border-teal-400 text-sm font-bold transition-all hover:scale-105 shadow-lg flex items-center gap-2"
+              className="w-full md:w-auto px-6 py-3.5 md:py-3 rounded-xl bg-slate-900/80 hover:bg-slate-800 border-2 border-teal-500/50 hover:border-teal-400 text-base md:text-sm font-bold transition-all hover:scale-105 shadow-lg flex items-center justify-center gap-2"
             >
-              <span>🎸</span>
+              <span className="text-xl md:text-base">🎸</span>
               Crear Sesión en Vivo
             </button>
           </div>
@@ -105,16 +105,16 @@ const HomePage: React.FC = () => {
       </div>
 
       {/* BLOQUE BUSCADOR + TARJETAS */}
-      <div className="rounded-3xl border-2 border-slate-800 bg-gradient-to-br from-slate-950 to-slate-900 p-6 md:p-8 space-y-6 shadow-xl">
+      <div className="rounded-xl md:rounded-3xl border-2 border-slate-800 bg-gradient-to-br from-slate-950 to-slate-900 p-4 md:p-8 space-y-5 md:space-y-6 shadow-xl">
         {/* BUSCADOR PRINCIPAL */}
         <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🔍</span>
+          <div className="flex items-center gap-2 md:gap-3">
+            <span className="text-2xl md:text-3xl">🔍</span>
             <div>
-              <h2 className="text-lg font-bold bg-gradient-to-r from-teal-300 to-purple-300 bg-clip-text text-transparent">
+              <h2 className="text-base md:text-lg font-bold bg-gradient-to-r from-teal-300 to-purple-300 bg-clip-text text-transparent">
                 Buscar canción en toda la biblioteca
               </h2>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider">
+              <p className="text-[10px] md:text-[11px] text-slate-400 uppercase tracking-wider">
                 Encuentra cualquier canción por título
               </p>
             </div>
@@ -128,12 +128,12 @@ const HomePage: React.FC = () => {
                 if (e.key === 'Enter') handleSearch()
               }}
               placeholder="🎵 Escribí el título de la canción..."
-              className="flex-1 rounded-xl bg-slate-900/80 border-2 border-slate-700 focus:border-purple-500/50 px-5 py-3 text-sm outline-none transition-all placeholder:text-slate-500"
+              className="flex-1 rounded-xl bg-slate-900/80 border-2 border-slate-700 focus:border-purple-500/50 px-4 md:px-5 py-3.5 md:py-3 text-base md:text-sm outline-none transition-all placeholder:text-slate-500"
             />
             <button
               onClick={handleSearch}
               disabled={searching}
-              className="rounded-xl bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 text-white px-6 py-3 text-sm font-bold disabled:opacity-60 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-teal-500/30 border-2 border-teal-400/60"
+              className="rounded-xl bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 text-white px-6 py-3.5 md:py-3 text-base md:text-sm font-bold disabled:opacity-60 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-teal-500/30 border-2 border-teal-400/60"
             >
               {searching ? '⏳ Buscando...' : '🔎 Buscar'}
             </button>
@@ -176,7 +176,7 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* TARJETAS PRINCIPALES */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
           {/* Importar */}
           <button
             onClick={() => navigate('/app/import')}
