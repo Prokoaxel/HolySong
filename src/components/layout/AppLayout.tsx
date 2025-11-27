@@ -167,7 +167,7 @@ const AppLayout: React.FC = () => {
                 <p className="text-base font-black bg-gradient-to-r from-purple-300 via-pink-300 to-teal-300 bg-clip-text text-transparent">
                   HolySong
                 </p>
-                <span className="text-[8px] text-slate-400">📱 Móvil</span>
+                <span className="text-[8px] text-teal-400 font-bold">📱 v1.2.0 MÓVIL</span>
               </div>
             </div>
             
