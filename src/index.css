@@ -198,54 +198,45 @@ body {
 }
 
 /* MOBILE RESPONSIVE - Forzar estilos móvil en pantallas pequeñas */
-@media (max-width: 767px) {
-  /* Ocultar header desktop y mostrar header móvil */
-  .desktop-header {
-    display: none !important;
-  }
-  
-  .mobile-header {
-    display: flex !important;
-  }
-  
-  /* Mostrar bottom navigation */
-  .bottom-nav-mobile {
-    display: flex !important;
-  }
-  
-  /* Ocultar footer en móvil */
-  .desktop-footer {
-    display: none !important;
-  }
-  
-  /* Padding bottom para contenido (por el bottom nav) */
-  .mobile-content-wrapper {
-    padding-bottom: 5rem !important;
-  }
+/* Por defecto en móvil */
+.desktop-header {
+  display: none !important;
 }
 
-@media (min-width: 768px) {
-  /* Mostrar header desktop */
+.mobile-header {
+  display: flex !important;
+}
+
+.bottom-nav-mobile {
+  display: flex !important;
+}
+
+.desktop-footer {
+  display: none !important;
+}
+
+.mobile-content-wrapper {
+  padding-bottom: 5rem !important;
+}
+
+/* Desktop - solo si pantalla es mayor a 768px */
+@media screen and (min-width: 768px) {
   .desktop-header {
     display: block !important;
   }
   
-  /* Ocultar header móvil */
   .mobile-header {
     display: none !important;
   }
   
-  /* Ocultar bottom navigation */
   .bottom-nav-mobile {
     display: none !important;
   }
   
-  /* Mostrar footer en desktop */
   .desktop-footer {
     display: block !important;
   }
   
-  /* Sin padding bottom extra en desktop */
   .mobile-content-wrapper {
     padding-bottom: 0 !important;
   }
