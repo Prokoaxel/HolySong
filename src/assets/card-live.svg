@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="grad" x1="0" x2="1">
+      <stop offset="0%" stop-color="#f43f5e"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="112" height="112" rx="18" fill="#0b1220"/>
+  <!-- Icono de LIVE: antena + ondas -->
+  <circle cx="64" cy="64" r="10" fill="#f43f5e"/>
+  <path d="M64 34v20" stroke="#a78bfa" stroke-width="4" stroke-linecap="round"/>
+  <path d="M44 64c0-11 9-20 20-20s20 9 20 20" stroke="url(#grad)" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M32 64c0-18 14-32 32-32s32 14 32 32" stroke="url(#grad)" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.7"/>
+</svg>

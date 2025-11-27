@@ -19,111 +19,143 @@ const AppLayout: React.FC = () => {
       : 'border-transparent text-slate-300 hover:border-slate-600 hover:bg-slate-900/60')
 
   return (
-    <div className="min-h-screen relative overflow-hidden text-slate-50">
-      {/* Fondo base oscuro */}
-      <div className="absolute inset-0 -z-30 bg-slate-950" />
-
-      {/* Hero decorative pattern */}
-      <div className="absolute inset-0 -z-25 opacity-30">
-        <img src="/src/assets/hero-pattern.svg" alt="hero pattern" className="w-full h-full object-cover" />
+    <div className="min-h-screen bg-slate-950 text-slate-50 relative overflow-hidden">
+      {/* Fondo musical con overlay y gradientes suaves */}
+      <div className="absolute inset-0 -z-10">
+        <img src="/brand/bg-piano.svg" alt="fondo musical" className="w-full h-full object-cover opacity-30"/>
       </div>
-
-      {/* “Luces” de escenario con gradientes */}
-      <div
-        className="pointer-events-none absolute inset-0 -z-20 opacity-60"
-        style={{
-          backgroundImage: `
-            radial-gradient(circle at 0% 0%, rgba(45,212,191,0.32), transparent 55%),
-            radial-gradient(circle at 100% 100%, rgba(129,140,248,0.35), transparent 55%),
-            radial-gradient(circle at 0% 100%, rgba(244,114,182,0.20), transparent 55%)
-          `,
-        }}
-      />
-
-      {/* Sutil textura diagonal */}
-      <div
-        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.08] mix-blend-soft-light"
-        style={{
-          backgroundImage:
-            'linear-gradient(135deg, #0f172a 25%, transparent 25%, transparent 50%, #0f172a 50%, #0f172a 75%, transparent 75%, transparent)',
-          backgroundSize: '24px 24px',
-        }}
-      />
+      <div className="background-vivid" />
 
       <div className="relative min-h-screen flex flex-col">
         {/* HEADER */}
-        <header className="relative h-14 border-b border-slate-800 bg-slate-950/70 backdrop-blur flex items-center justify-between px-4 md:px-8">
-          {/* Header rotating glow */}
-          <div className="header-glow pointer-events-none">
-            <div className="ring" />
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleBack}
-              className="rounded-full border border-slate-700 px-3 py-1 text-xs hover:border-teal-400 hover:text-teal-200 bg-slate-900/80"
-            >
-              ← Volver
-            </button>
-            <div className="flex items-center gap-2">
-              {/* Icono principal (logo) */}
-              <div className="relative w-12 h-12 logo-ornament">
-                <div className="logo-ring" />
-                <div className="absolute inset-0 rounded-2xl blur-3xl opacity-30 bg-gradient-to-br from-teal-400 to-purple-700 animate-rotate-slow"/>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <img src="/src/assets/logo.svg" alt="HolySong logo" className="w-9 h-9 animate-breath" />
+        <header className="relative border-b-2 border-purple-500/30 bg-gradient-to-r from-slate-950 via-purple-950/20 to-slate-950 backdrop-blur-xl shadow-xl shadow-purple-500/10 overflow-hidden">
+          {/* Efectos de fondo */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/5 to-transparent animate-[shimmer_4s_ease-in-out_infinite]" />
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-400/60 to-transparent" />
+          
+          <div className="relative flex items-center justify-between px-4 md:px-8 py-3 fade-in">
+            <div className="flex items-center gap-3">
+              {location.pathname !== '/app' && (
+                <button
+                  onClick={handleBack}
+                  className="group relative px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border-2 border-slate-700 hover:border-purple-500/50 text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-lg flex items-center gap-1.5"
+                >
+                  <span className="group-hover:-translate-x-1 transition-transform">←</span>
+                  Volver
+                </button>
+              )}
+              
+              <div className="flex items-center gap-3">
+                {/* Logo simple - corchea */}
+                <div className="relative w-10 h-10 group/logo">
+                  <img 
+                    src="/brand/note.svg" 
+                    alt="HolySong" 
+                    className="w-full h-full text-purple-400 group-hover/logo:scale-110 transition-transform duration-300 filter brightness-0 invert" 
+                  />
+                </div>
+                
+                <div className="hidden sm:block">
+                  <div className="flex items-center gap-2">
+                    <p className="text-base font-black bg-gradient-to-r from-purple-300 via-pink-300 to-teal-300 bg-clip-text text-transparent tracking-tight leading-none">
+                      HolySong
+                    </p>
+                    <span className="px-1.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/40 text-[8px] font-bold text-purple-300 animate-pulse">
+                      LIVE
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-semibold tracking-wider uppercase leading-none mt-0.5">
+                    Letras & Acordes en Vivo
+                  </p>
                 </div>
               </div>
-              <div>
-                <p className="text-sm font-semibold leading-none">HolySong</p>
-                <p className="text-[11px] text-slate-400 leading-none">
-                  Letras, acordes y sesiones en vivo
-                </p>
-              </div>
             </div>
-          </div>
 
-          <nav className="hidden md:flex items-center gap-2 md:gap-3">
-            <NavLink to="/app" end className={linkClass}>
-              Inicio
-            </NavLink>
-            <NavLink to="/app/import" className={linkClass}>
-              Importar
-            </NavLink>
-            <NavLink to="/app/library" className={linkClass}>
-              Biblioteca
-            </NavLink>
-            <NavLink to="/app/folders" className={linkClass}>
-              Carpetas
-            </NavLink>
-            <NavLink to="/app/live" className={linkClass}>
-              Sesión en vivo
-            </NavLink>
-          </nav>
+            <nav className="hidden md:flex items-center gap-2">
+              <NavLink to="/app" end className={({ isActive }) =>
+                'relative px-4 py-2 rounded-xl text-xs font-bold transition-all hover:scale-105 ' +
+                (isActive
+                  ? 'bg-gradient-to-r from-teal-600 to-teal-700 text-white border-2 border-teal-400/60 shadow-lg shadow-teal-500/30'
+                  : 'bg-slate-900/60 text-slate-300 border-2 border-slate-700 hover:border-purple-500/50 hover:bg-slate-800')
+              }>
+                🏠 Inicio
+              </NavLink>
+              <NavLink to="/app/import" className={({ isActive }) =>
+                'relative px-4 py-2 rounded-xl text-xs font-bold transition-all hover:scale-105 ' +
+                (isActive
+                  ? 'bg-gradient-to-r from-teal-600 to-teal-700 text-white border-2 border-teal-400/60 shadow-lg shadow-teal-500/30'
+                  : 'bg-slate-900/60 text-slate-300 border-2 border-slate-700 hover:border-purple-500/50 hover:bg-slate-800')
+              }>
+                📥 Importar
+              </NavLink>
+              <NavLink to="/app/library" className={({ isActive }) =>
+                'relative px-4 py-2 rounded-xl text-xs font-bold transition-all hover:scale-105 ' +
+                (isActive
+                  ? 'bg-gradient-to-r from-teal-600 to-teal-700 text-white border-2 border-teal-400/60 shadow-lg shadow-teal-500/30'
+                  : 'bg-slate-900/60 text-slate-300 border-2 border-slate-700 hover:border-purple-500/50 hover:bg-slate-800')
+              }>
+                📚 Biblioteca
+              </NavLink>
+              <NavLink to="/app/folders" className={({ isActive }) =>
+                'relative px-4 py-2 rounded-xl text-xs font-bold transition-all hover:scale-105 ' +
+                (isActive
+                  ? 'bg-gradient-to-r from-teal-600 to-teal-700 text-white border-2 border-teal-400/60 shadow-lg shadow-teal-500/30'
+                  : 'bg-slate-900/60 text-slate-300 border-2 border-slate-700 hover:border-purple-500/50 hover:bg-slate-800')
+              }>
+                📁 Carpetas
+              </NavLink>
+              <NavLink to="/app/live" className={({ isActive }) =>
+                'relative px-4 py-2 rounded-xl text-xs font-bold transition-all hover:scale-105 ' +
+                (isActive
+                  ? 'bg-gradient-to-r from-teal-600 to-teal-700 text-white border-2 border-teal-400/60 shadow-lg shadow-teal-500/30'
+                  : 'bg-slate-900/60 text-slate-300 border-2 border-slate-700 hover:border-purple-500/50 hover:bg-slate-800')
+              }>
+                🎸 Sesión en vivo
+              </NavLink>
+            </nav>
 
-          <div className="flex items-center gap-2 text-[11px] md:text-xs">
-            {user && (
-              <span className="text-slate-400 hidden sm:inline">
-                {user.email}
-              </span>
-            )}
-            {user && (
-              <button
-                onClick={signOut}
-                className="rounded-full border border-slate-700 px-3 py-1 hover:border-red-500 hover:text-red-300 bg-slate-900/80"
-              >
-                Cerrar sesión
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {/* Card de usuario */}
+              <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/80 border-2 border-slate-700 backdrop-blur-sm">
+                <div className="relative w-7 h-7 rounded-full bg-gradient-to-br from-purple-600/30 via-pink-600/30 to-teal-600/30 border-2 border-purple-400/60 flex items-center justify-center">
+                  <span className="text-sm">👤</span>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-slate-900 animate-pulse" />
+                </div>
+                {user && (
+                  <span className="text-xs font-semibold text-slate-200 hidden lg:inline">
+                    {user.email?.split('@')[0]}
+                  </span>
+                )}
+              </div>
+              
+              {/* Botón cerrar sesión */}
+              {user && (
+                <button
+                  onClick={signOut}
+                  className="group/btn relative px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-xs font-black uppercase tracking-wider transition-all hover:scale-110 active:scale-95 border-2 border-red-400/50 shadow-lg shadow-red-500/20 overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover/btn:translate-x-[200%] transition-transform duration-700" />
+                  <span className="relative flex items-center gap-1.5">
+                    <span className="text-sm group-hover/btn:rotate-12 transition-transform">🚪</span>
+                    <span className="hidden md:inline">Cerrar sesión</span>
+                  </span>
+                </button>
+              )}
+            </div>
           </div>
         </header>
 
         {/* CONTENIDO */}
-        <main className="flex-1 px-3 md:px-8 py-4 md:py-6">
+        <main className="flex-1 px-3 md:px-8 py-4 md:py-6 fade-in">
           <Outlet />
         </main>
 
-        <footer className="border-t border-slate-900 bg-slate-950/80 text-[11px] text-center text-slate-500 py-2">
-          HolySong © {new Date().getFullYear()}
+        <footer className="border-t border-slate-900 bg-slate-950/80 text-[11px] text-slate-500 py-2 px-4 md:px-8">
+          <div className="flex items-center justify-between">
+            <span>Autor: Prokopczuk, Axel</span>
+            <span>HolySong © {new Date().getFullYear()}</span>
+            <span>Versión: 1.1.5</span>
+          </div>
         </footer>
       </div>
     </div>

@@ -12,6 +12,13 @@ export type Folder = {
   owner_id?: string | null
 }
 
+export type FolderSong = {
+  folder_id: string
+  song_id: string
+  custom_transpose: number
+  songs?: Song
+}
+
 export type DbSong = {
   id: string
   title: string
@@ -39,3 +46,17 @@ export type LiveSession = {
 }
 
 export type Role = 'none' | 'admin' | 'listener'
+
+export type Comment = {
+  id: string
+  song_id: string
+  version_id: string | null  // 'base' para versión principal, o ID de version
+  user_id: string
+  user_email: string
+  text_selection: string
+  comment_text: string
+  position_start: number
+  position_end: number
+  created_at: string
+  updated_at: string
+}

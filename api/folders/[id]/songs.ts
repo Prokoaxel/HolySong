@@ -34,8 +34,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .maybeSingle()
 
   if (folderErr) {
-    console.error(folderErr)
-    return res.status(500).json({ error: 'Failed fetching folder' })
+    console.error('[folders] fetch folder error:', folderErr)
+    return res.status(500).json({ error: 'Failed fetching folder', details: folderErr.message })
   }
 
   if (!folderData || folderData.owner_id !== userId) {
@@ -52,8 +52,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .insert({ folder_id: id, song_id })
 
     if (error) {
-      console.error(error)
-      return res.status(500).json({ error: 'Error inserting song to folder' })
+      // Si es duplicado (ya existía), lo consideramos éxito idempotente
+      const code = (error as any)?.code || (error as any)?.hint || ''
+      console.error('[folders] insert error:', error)
+      if (code === '23505') {
+        return res.status(200).json({ success: true, info: 'already exists' })
+      }
+      return res.status(500).json({ error: 'Error inserting song to folder', details: error.message })
     }
 
     return res.status(200).json({ success: true })
@@ -70,8 +75,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .match({ folder_id: id, song_id: songId })
 
     if (error) {
-      console.error(error)
-      return res.status(500).json({ error: 'Error removing song from folder' })
+      console.error('[folders] remove error:', error)
+      return res.status(500).json({ error: 'Error removing song from folder', details: error.message })
     }
 
     return res.status(200).json({ success: true })

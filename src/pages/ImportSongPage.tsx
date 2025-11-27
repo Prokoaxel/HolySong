@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../hooks/useAuth'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { createWorker } from 'tesseract.js'
 
 type FormState = {
   title: string
@@ -146,26 +147,43 @@ const ImportSongPage: React.FC = () => {
       alert('Subí primero un PDF o imagen.')
       return
     }
+
     try {
       setOcrLoading(true)
-      const formData = new FormData()
-      formData.append('file', file)
-
-      // TODO: reemplazar /api/ocr por tu endpoint real (Edge Function / backend)
-      const res = await fetch('/api/ocr', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!res.ok) {
-        throw new Error('Error en el servidor OCR')
+      
+      // Validar tipo de archivo
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp']
+      if (!validTypes.includes(file.type)) {
+        alert('⚠️ Por favor subí una imagen (JPG, PNG, GIF, BMP).\n\nLos archivos PDF no están soportados actualmente.')
+        return
       }
 
-      const data = await res.json()
-      setOcrText(data.text || '')
+      // Crear worker de Tesseract
+      const worker = await createWorker('spa', 1, {
+        logger: (m) => {
+          if (m.status === 'recognizing text') {
+            console.log(`OCR Progreso: ${Math.round(m.progress * 100)}%`)
+          }
+        }
+      })
+
+      // Reconocer texto
+      const { data } = await worker.recognize(file)
+      await worker.terminate()
+
+      const extractedText = data.text.trim()
+      
+      if (!extractedText) {
+        alert('⚠️ No se pudo extraer texto de la imagen.\n\nAsegurate que:\n• La imagen tenga texto legible\n• El texto no esté borroso\n• Haya buen contraste')
+        return
+      }
+
+      setOcrText(extractedText)
+      alert('✅ Texto extraído correctamente!\n\nRevisá el resultado y luego hacé clic en "Usar texto OCR en la letra"')
+      
     } catch (err: any) {
-      console.error(err)
-      alert('Error ejecutando OCR: ' + err.message)
+      console.error('OCR Error:', err)
+      alert('❌ Error ejecutando OCR: ' + err.message + '\n\nIntentá con otra imagen o pegá el texto manualmente.')
     } finally {
       setOcrLoading(false)
     }
@@ -281,10 +299,20 @@ const ImportSongPage: React.FC = () => {
     : 'Guardar canción'
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold mb-1">{headerTitle}</h1>
-        <p className="text-xs text-slate-400">{headerSubtitle}</p>
+    <div className="max-w-5xl mx-auto space-y-4 fade-in py-4">
+      {/* Header mejorado con gradiente y animación */}
+      <div className="relative rounded-xl bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900 border-2 border-purple-400/40 p-4 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-purple-500/10 to-pink-500/5 animate-[shimmer_3s_ease-in-out_infinite]" />
+        <div className="relative flex items-center gap-3">
+          <div className="relative">
+            <div className="absolute inset-0 bg-purple-500/30 rounded-full blur-md animate-pulse" />
+            <span className="relative text-3xl">{isEditing ? '✏️' : '📥'}</span>
+          </div>
+          <div>
+            <h1 className="text-lg font-bold bg-gradient-to-r from-purple-200 to-pink-200 bg-clip-text text-transparent mb-1">{headerTitle}</h1>
+            <p className="text-xs text-slate-300 leading-relaxed">{headerSubtitle}</p>
+          </div>
+        </div>
       </div>
 
       {loadingInitial ? (
@@ -292,37 +320,68 @@ const ImportSongPage: React.FC = () => {
       ) : (
         <>
           {/* archivo + OCR */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 space-y-3 text-sm">
-            <p className="font-semibold text-xs">Archivo (opcional)</p>
-            <input
-              type="file"
-              accept=".pdf,.png,.jpg,.jpeg"
-              onChange={handleFileChange}
-              className="text-xs"
-            />
-            {file && (
-              <p className="text-[11px] text-slate-400">
-                Archivo seleccionado: {file.name}
+          <div className="rounded-2xl border-2 border-slate-700 hover:border-purple-500/50 bg-gradient-to-br from-slate-900/90 to-slate-800/80 p-6 space-y-4 text-sm transition-all hover:shadow-lg hover:shadow-purple-500/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">📄</span>
+                <p className="font-bold text-sm text-slate-200">Archivo (opcional)</p>
+              </div>
+              <span className="text-[10px] px-2 py-1 rounded-full bg-orange-500/10 border border-orange-400/30 text-orange-200">Solo imágenes</span>
+            </div>
+            
+            <div className="relative">
+              <input
+                type="file"
+                accept="image/*,.png,.jpg,.jpeg,.gif,.bmp"
+                onChange={handleFileChange}
+                className="w-full text-xs bg-slate-900/80 border-2 border-slate-700 rounded-lg px-4 py-3 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gradient-to-r file:from-purple-600 file:to-pink-600 file:text-white hover:file:from-purple-500 hover:file:to-pink-500 file:cursor-pointer transition-all"
+              />
+              <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
+                <span>💡</span>
+                Subí una captura o foto de la letra. PDF no soportado por el momento.
               </p>
+            </div>
+            
+            {file && (
+              <div className="flex items-center gap-2 bg-teal-500/10 border border-teal-400/30 rounded-lg px-3 py-2 animate-[fadeIn_200ms_ease]">
+                <span className="text-sm">✅</span>
+                <p className="text-[11px] text-teal-200 font-medium">
+                  {file.name}
+                </p>
+              </div>
             )}
 
             <button
               onClick={handleRunOcr}
               disabled={!file || ocrLoading}
-              className="mt-2 rounded-lg bg-slate-800 px-3 py-1 text-[11px] disabled:opacity-60"
+              className="w-full rounded-lg bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 disabled:from-slate-700 disabled:to-slate-700 px-5 py-3 text-sm font-bold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg flex items-center justify-center gap-2"
             >
-              {ocrLoading ? 'Reconociendo...' : 'Reconocer texto (OCR)'}
+              {ocrLoading ? (
+                <>
+                  <span className="animate-spin">⚙️</span>
+                  Reconociendo texto...
+                </>
+              ) : (
+                <>
+                  <span>🔍</span>
+                  Reconocer texto (OCR)
+                </>
+              )}
             </button>
 
             {ocrText && (
-              <div className="mt-3 space-y-1">
-                <p className="text-[11px] font-semibold">
-                  Resultado de OCR
-                </p>
+              <div className="mt-4 space-y-3 bg-gradient-to-br from-teal-900/20 to-purple-900/20 border-2 border-teal-400/40 rounded-xl p-4 animate-[fadeIn_300ms_ease]">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">✨</span>
+                  <p className="text-sm font-bold text-teal-200">
+                    Resultado de OCR
+                  </p>
+                </div>
                 <textarea
                   value={ocrText}
                   onChange={e => setOcrText(e.target.value)}
-                  className="w-full h-32 rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-xs"
+                  className="w-full h-32 rounded-lg bg-slate-900/80 border-2 border-slate-700 focus:border-teal-500/50 px-4 py-3 text-xs font-mono resize-none outline-none transition-all"
+                  placeholder="El texto reconocido aparecerá aquí..."
                 />
                 <button
                   onClick={() =>
@@ -333,8 +392,9 @@ const ImportSongPage: React.FC = () => {
                         : ocrText,
                     }))
                   }
-                  className="mt-1 rounded-lg bg-slate-800 px-3 py-1 text-[11px]"
+                  className="w-full rounded-lg bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 px-4 py-2.5 text-xs font-bold transition-all hover:scale-105 shadow-lg flex items-center justify-center gap-2"
                 >
+                  <span>📝</span>
                   Usar texto OCR en la letra
                 </button>
               </div>
@@ -342,72 +402,102 @@ const ImportSongPage: React.FC = () => {
           </div>
 
           {/* formulario principal */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 space-y-4 text-sm">
-            <div className="grid gap-3 md:grid-cols-2">
+          <div className="rounded-2xl border-2 border-slate-700 hover:border-purple-500/50 bg-gradient-to-br from-slate-900 via-slate-900 to-purple-900/20 p-6 space-y-5 text-sm transition-all hover:shadow-lg hover:shadow-purple-500/20">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-2xl">🎵</span>
+              <h2 className="font-bold text-base text-slate-200">Datos de la canción</h2>
+            </div>
+            
+            <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label className="block text-xs mb-1">Título</label>
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 mb-2">
+                  <span>🎼</span>
+                  Título
+                </label>
                 <input
                   value={form.title}
                   onChange={handleChange('title')}
-                  className="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-xs"
+                  className="w-full rounded-lg bg-slate-900/80 border-2 border-slate-700 focus:border-purple-500/50 px-4 py-2.5 text-sm outline-none transition-all disabled:opacity-50"
                   placeholder="Ej: Toma tu lugar"
-                  disabled={isEditingVersion} // en versión normalmente no cambia
+                  disabled={isEditingVersion}
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1">Autor</label>
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 mb-2">
+                  <span>👤</span>
+                  Autor
+                </label>
                 <input
                   value={form.author}
                   onChange={handleChange('author')}
-                  className="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-xs"
+                  className="w-full rounded-lg bg-slate-900/80 border-2 border-slate-700 focus:border-purple-500/50 px-4 py-2.5 text-sm outline-none transition-all disabled:opacity-50"
                   placeholder="Opcional"
                   disabled={isEditingVersion}
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1">Compositor</label>
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 mb-2">
+                  <span>✍️</span>
+                  Compositor
+                </label>
                 <input
                   value={form.composer}
                   onChange={handleChange('composer')}
-                  className="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-xs"
+                  className="w-full rounded-lg bg-slate-900/80 border-2 border-slate-700 focus:border-purple-500/50 px-4 py-2.5 text-sm outline-none transition-all disabled:opacity-50"
                   placeholder="Opcional"
                   disabled={isEditingVersion}
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1">Tono</label>
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 mb-2">
+                  <span>🎹</span>
+                  Tono
+                </label>
                 <input
                   value={form.tone}
                   onChange={handleChange('tone')}
-                  className="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-xs"
+                  className="w-full rounded-lg bg-slate-900/80 border-2 border-slate-700 focus:border-orange-500/50 px-4 py-2.5 text-sm font-bold outline-none transition-all"
                   placeholder="Ej: D, Em, F#..."
                 />
-                <p className="text-[10px] text-slate-500 mt-1">
-                  Este tono se agregará al principio como &quot;Tono:
-                  X&quot; y se usará para transponer.
-                </p>
+                <div className="flex items-start gap-1 mt-2">
+                  <span className="text-[10px]">💡</span>
+                  <p className="text-[10px] text-slate-400 leading-relaxed">
+                    Este tono se agregará al principio como &quot;Tono: X&quot; y se usará para transponer.
+                  </p>
+                </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs mb-1">
+              <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 mb-2">
+                <span>📝</span>
                 Letra con acordes
               </label>
               <textarea
                 value={form.content}
                 onChange={handleChange('content')}
-                className="w-full h-64 rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-xs font-mono"
+                className="w-full h-64 rounded-lg bg-slate-900/80 border-2 border-slate-700 focus:border-purple-500/50 px-4 py-3 text-sm font-mono resize-none outline-none transition-all"
                 placeholder="Pegá aquí la letra con los acordes (Em, Bm, C#, etc.)"
               />
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end pt-2 border-t border-slate-700">
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="rounded-lg bg-teal-500 px-5 py-2 text-xs font-semibold text-slate-950 hover:bg-teal-400 disabled:opacity-60"
+                className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-slate-700 disabled:to-slate-700 px-8 py-3 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 shadow-lg flex items-center gap-2"
               >
-                {saveButtonLabel}
+                {saving ? (
+                  <>
+                    <span className="animate-spin">⚙️</span>
+                    {saveButtonLabel}
+                  </>
+                ) : (
+                  <>
+                    <span>💾</span>
+                    {saveButtonLabel}
+                  </>
+                )}
               </button>
             </div>
           </div>
