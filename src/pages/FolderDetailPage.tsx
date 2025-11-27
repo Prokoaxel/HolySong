@@ -176,40 +176,40 @@ const FolderDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto py-4">
+    <div className="space-y-3 sm:space-y-6 max-w-5xl mx-auto py-2 sm:py-4">
       {/* Header mejorado */}
-      <div className="relative rounded-xl bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900 border-2 border-purple-400/40 p-5 overflow-hidden">
+      <div className="relative rounded-lg sm:rounded-xl bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900 border border-purple-400/40 sm:border-2 p-3 sm:p-5 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-purple-500/10 to-pink-500/5 animate-[shimmer_3s_ease-in-out_infinite]" />
-        <div className="relative flex items-center gap-3">
+        <div className="relative flex items-center gap-2 sm:gap-3">
           <div className="relative">
             <div className="absolute inset-0 bg-purple-500/30 rounded-full blur-lg animate-pulse" />
-            <span className="relative text-4xl">📂</span>
+            <span className="relative text-2xl sm:text-4xl">📂</span>
           </div>
           <div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-purple-200 to-pink-200 bg-clip-text text-transparent">{folderName}</h1>
-            <p className="text-xs text-slate-300 flex items-center gap-1 mt-1">
+            <h1 className="text-sm sm:text-xl font-bold bg-gradient-to-r from-purple-200 to-pink-200 bg-clip-text text-transparent">{folderName}</h1>
+            <p className="text-[10px] sm:text-xs text-slate-300 flex items-center gap-1 mt-0.5 sm:mt-1">
               <span>🎵</span>
-              {songs.length} canción{songs.length !== 1 ? 'es' : ''} en esta carpeta
+              {songs.length} canción{songs.length !== 1 ? 'es' : ''}
             </p>
           </div>
         </div>
       </div>
 
       {/* Agregar canción a la carpeta (buscar en biblioteca) */}
-      <div className="rounded-xl border-2 border-slate-700 hover:border-purple-500/50 bg-gradient-to-br from-slate-900/90 to-slate-800/80 p-5 space-y-4 transition-all hover:shadow-lg hover:shadow-purple-500/20">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">📚</span>
-          <h2 className="font-bold text-sm text-slate-200">Agregar canción desde la biblioteca</h2>
+      <div className="rounded-lg sm:rounded-xl border border-slate-700 sm:border-2 hover:border-purple-500/50 bg-gradient-to-br from-slate-900/90 to-slate-800/80 p-3 sm:p-5 space-y-3 sm:space-y-4 transition-all hover:shadow-lg hover:shadow-purple-500/20">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <span className="text-xl sm:text-2xl">📚</span>
+          <h2 className="font-bold text-xs sm:text-sm text-slate-200">Agregar desde biblioteca</h2>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3">
           <input
             value={libraryQuery}
             onChange={e => setLibraryQuery(e.target.value)}
-            placeholder="Buscar en la biblioteca global..."
-            className="rounded-lg bg-slate-900/80 border-2 border-slate-700 focus:border-purple-500/50 px-4 py-2 text-sm flex-1 outline-none transition-all"
+            placeholder="Buscar canción..."
+            className="rounded-lg bg-slate-900/80 border border-slate-700 sm:border-2 focus:border-purple-500/50 px-3 sm:px-4 py-2 text-xs sm:text-sm flex-1 outline-none transition-all"
           />
         </div>
-        <div className="mt-2 max-h-64 overflow-auto rounded-lg border-2 border-slate-800 bg-slate-950/80">
+        <div className="mt-2 max-h-64 overflow-auto rounded-lg border border-slate-800 sm:border-2 bg-slate-950/80">
           {allSongs
             .filter(a => a.title.toLowerCase().includes(libraryQuery.toLowerCase()))
             .slice(0, 50)
@@ -217,35 +217,35 @@ const FolderDetailPage: React.FC = () => {
               <div
                 key={a.id}
                 style={{ animationDelay: `${idx * 20}ms` }}
-                className="px-4 py-3 flex items-center justify-between border-b border-slate-900/40 last:border-b-0 hover:bg-slate-900/50 transition-all animate-[fadeIn_300ms_ease]"
+                className="px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2 border-b border-slate-900/40 last:border-b-0 hover:bg-slate-900/50 transition-all animate-[fadeIn_300ms_ease]"
               >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <span className="text-lg">🎵</span>
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <span className="text-base sm:text-lg flex-shrink-0">🎵</span>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm text-slate-100 truncate">{a.title}</div>
-                    {a.author && <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5"><span>👤</span>{a.author}</div>}
+                    <div className="font-medium text-xs sm:text-sm text-slate-100 truncate">{a.title}</div>
+                    {a.author && <div className="text-[10px] sm:text-xs text-slate-400 flex items-center gap-0.5 sm:gap-1 mt-0.5 truncate"><span>👤</span><span className="truncate">{a.author}</span></div>}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                   <button
                     onClick={() => navigate(`/app/song/${a.id}`)}
-                    className="rounded-lg px-3 py-1.5 text-xs font-semibold transition-all hover:scale-105 bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center gap-1"
+                    className="rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-semibold transition-all hover:scale-105 bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center gap-0.5 sm:gap-1"
                   >
                     <span>👁️</span>
-                    Abrir
+                    <span className="hidden sm:inline">Abrir</span>
                   </button>
                   <button
                     onClick={() => addToFolder(a.id)}
                     disabled={songs.some(x => x.id === a.id)}
                     className={
-                      'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all hover:scale-105 flex items-center gap-1 ' +
+                      'rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-semibold transition-all hover:scale-105 flex items-center gap-0.5 sm:gap-1 ' +
                       (songs.some(x => x.id === a.id)
                         ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60'
                         : 'bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 shadow-lg')
                     }
                   >
                     <span>{songs.some(x => x.id === a.id) ? '✓' : '➕'}</span>
-                    {songs.some(x => x.id === a.id) ? 'Agregada' : 'Agregar'}
+                    <span className="hidden sm:inline">{songs.some(x => x.id === a.id) ? 'Agregada' : 'Agregar'}</span>
                   </button>
                 </div>
               </div>
@@ -260,23 +260,23 @@ const FolderDetailPage: React.FC = () => {
       </div>
 
       {/* Lista de canciones de la carpeta */}
-      <div className="rounded-xl border-2 border-slate-700 hover:border-purple-500/50 bg-gradient-to-br from-slate-900/90 to-slate-800/80 p-4 transition-all hover:shadow-lg hover:shadow-purple-500/20">
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🎶</span>
-            <h2 className="text-sm font-bold text-slate-200">Canciones en la carpeta</h2>
+      <div className="rounded-lg sm:rounded-xl border border-slate-700 sm:border-2 hover:border-purple-500/50 bg-gradient-to-br from-slate-900/90 to-slate-800/80 p-2 sm:p-4 transition-all hover:shadow-lg hover:shadow-purple-500/20">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="text-xl sm:text-2xl">🎶</span>
+            <h2 className="text-xs sm:text-sm font-bold text-slate-200">Canciones</h2>
           </div>
           {/* Buscador compacto dentro del recuadro */}
-          <div className="flex items-center gap-2 max-w-xs">
-            <label className="text-xs text-slate-400 flex items-center gap-1">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-1 sm:flex-initial sm:max-w-xs">
+            <label className="text-xs text-slate-400 flex items-center gap-1 flex-shrink-0">
               <span>🔍</span>
             </label>
             <input
               type="text"
-              className="w-full rounded-lg bg-slate-900/80 border border-slate-700 focus:border-purple-500/50 px-3 py-1.5 text-xs outline-none transition-all"
+              className="w-full rounded-lg bg-slate-900/80 border border-slate-700 focus:border-purple-500/50 px-2 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs outline-none transition-all"
               value={songSearch}
               onChange={e => setSongSearch(e.target.value)}
-              placeholder="Buscá por título..."
+              placeholder="Buscar..."
             />
           </div>
         </div>
@@ -316,15 +316,15 @@ const FolderDetailPage: React.FC = () => {
                 key={s.id}
                 style={{ animationDelay: `${idx * 30}ms` }}
                 className={
-                  'rounded-lg px-4 py-3 transition-all flex items-center gap-4 animate-[fadeIn_300ms_ease] ' +
+                  'rounded-lg px-2 sm:px-4 py-2 sm:py-3 transition-all flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 animate-[fadeIn_300ms_ease] ' +
                   (isActive
-                    ? 'bg-gradient-to-r from-teal-900/40 to-teal-800/40 ring-2 ring-teal-400 shadow-lg shadow-teal-500/20'
+                    ? 'bg-gradient-to-r from-teal-900/40 to-teal-800/40 ring-1 sm:ring-2 ring-teal-400 shadow-lg shadow-teal-500/20'
                     : 'bg-slate-900/60 border border-slate-700 hover:border-purple-500/50')
                 }
               >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                     <div className={
-                      'w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-all ' +
+                      'w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-base sm:text-lg transition-all flex-shrink-0 ' +
                       (isActive
                         ? 'bg-gradient-to-br from-teal-500/30 to-teal-600/20 border-2 border-teal-400'
                         : 'bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-slate-700')
@@ -332,13 +332,13 @@ const FolderDetailPage: React.FC = () => {
                       {isActive ? '▶️' : '🎵'}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-100 truncate">{s.title}</p>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <p className="text-xs sm:text-sm font-semibold text-slate-100 truncate">{s.title}</p>
+                      <div className="flex items-center gap-1 sm:gap-2 mt-0.5 sm:mt-1 flex-wrap">
                         {isActive && (
-                          <span className="text-xs text-teal-300 font-medium">📍 Actual</span>
+                          <span className="text-[10px] sm:text-xs text-teal-300 font-medium">📍 Actual</span>
                         )}
                         {s.tone && (
-                          <span className="text-xs px-2 py-0.5 rounded bg-slate-700/60 text-slate-300 font-semibold border border-slate-600">
+                          <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded bg-slate-700/60 text-slate-300 font-semibold border border-slate-600">
                             🎼 {originalTone}
                             {transposedTone && (
                               <span className="text-purple-300"> → {transposedTone}</span>
@@ -346,44 +346,44 @@ const FolderDetailPage: React.FC = () => {
                           </span>
                         )}
                         {customTranspose !== 0 && (
-                          <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-semibold border border-purple-500/30">
-                            {customTranspose > 0 ? '+' : ''}{customTranspose} semitonos
+                          <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-semibold border border-purple-500/30">
+                            {customTranspose > 0 ? '+' : ''}{customTranspose}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                     {/* Control de transposición */}
                     {isEditing ? (
-                      <div className="flex items-center gap-2 bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl px-3 py-2 border-2 border-purple-500/50 shadow-lg shadow-purple-500/20 animate-[fadeIn_200ms_ease]">
+                      <div className="flex items-center gap-1 sm:gap-2 bg-gradient-to-r from-slate-900 to-slate-800 rounded-lg sm:rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 border border-purple-500/50 sm:border-2 shadow-lg shadow-purple-500/20 animate-[fadeIn_200ms_ease] w-full sm:w-auto">
                         <button
                           onClick={() => setTempTranspose(prev => prev - 1)}
-                          className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-sm font-bold transition-all hover:scale-110 active:scale-95 shadow-md flex items-center justify-center"
+                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-xs sm:text-sm font-bold transition-all hover:scale-110 active:scale-95 shadow-md flex items-center justify-center"
                         >
                           <span className="text-white">−</span>
                         </button>
-                        <div className="flex flex-col items-center min-w-[60px]">
-                          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide">Semitonos</span>
-                          <span className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                        <div className="flex flex-col items-center min-w-[50px] sm:min-w-[60px]">
+                          <span className="text-[9px] sm:text-[10px] text-slate-400 font-semibold uppercase tracking-wide hidden sm:block">Semitonos</span>
+                          <span className="text-base sm:text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
                             {tempTranspose > 0 ? '+' : ''}{tempTranspose}
                           </span>
                           {s.tone && (
-                            <span className="text-[10px] text-teal-400 font-semibold">
+                            <span className="text-[9px] sm:text-[10px] text-teal-400 font-semibold">
                               {originalTone} → {transposeNote(s.tone, tempTranspose)}
                             </span>
                           )}
                         </div>
                         <button
                           onClick={() => setTempTranspose(prev => prev + 1)}
-                          className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-sm font-bold transition-all hover:scale-110 active:scale-95 shadow-md flex items-center justify-center"
+                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-xs sm:text-sm font-bold transition-all hover:scale-110 active:scale-95 shadow-md flex items-center justify-center"
                         >
                           <span className="text-white">+</span>
                         </button>
-                        <div className="w-px h-8 bg-slate-700 mx-1"></div>
+                        <div className="w-px h-6 sm:h-8 bg-slate-700 mx-0.5 sm:mx-1"></div>
                         <button
                           onClick={() => setTempTranspose(0)}
-                          className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 text-xs font-bold transition-all hover:scale-110 active:scale-95"
+                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-700 hover:bg-slate-600 text-[10px] sm:text-xs font-bold transition-all hover:scale-110 active:scale-95"
                           title="Resetear a original"
                         >
                           0
@@ -392,7 +392,7 @@ const FolderDetailPage: React.FC = () => {
                           onClick={() => {
                             updateCustomTranspose(s.id, tempTranspose)
                           }}
-                          className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-sm transition-all hover:scale-110 active:scale-95 shadow-md flex items-center justify-center"
+                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-xs sm:text-sm transition-all hover:scale-110 active:scale-95 shadow-md flex items-center justify-center"
                         >
                           <span className="text-white">✓</span>
                         </button>
@@ -403,10 +403,10 @@ const FolderDetailPage: React.FC = () => {
                           setEditingTranspose(s.id)
                           setTempTranspose(customTranspose)
                         }}
-                        className="rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all hover:scale-110 active:scale-95 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 border-2 border-purple-400/60 shadow-lg shadow-purple-500/30 flex items-center gap-1.5"
+                        className="rounded-lg sm:rounded-xl px-2 sm:px-2.5 py-1 sm:py-1.5 text-[10px] sm:text-xs font-bold transition-all hover:scale-110 active:scale-95 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 border border-purple-400/60 sm:border-2 shadow-lg shadow-purple-500/30 flex items-center gap-1 sm:gap-1.5"
                         title="Ajustar tono para esta carpeta"
                       >
-                        <span className="text-sm">🎸</span>
+                        <span className="text-xs sm:text-sm">🎸</span>
                         <span>{customTranspose !== 0 ? `${customTranspose > 0 ? '+' : ''}${customTranspose}` : 'Tono'}</span>
                       </button>
                     )}
@@ -416,17 +416,17 @@ const FolderDetailPage: React.FC = () => {
                         setCurrentIndex(origIdx === -1 ? null : origIdx)
                         navigate(`/app/song/${s.id}?folderId=${id}`)
                       }}
-                      className="rounded-xl px-3 py-2 text-xs font-bold transition-all hover:scale-110 active:scale-95 bg-slate-800 hover:bg-slate-700 border-2 border-slate-700 shadow-lg flex items-center gap-1.5"
+                      className="rounded-lg sm:rounded-xl px-2 sm:px-3 py-1 sm:py-2 text-[10px] sm:text-xs font-bold transition-all hover:scale-110 active:scale-95 bg-slate-800 hover:bg-slate-700 border border-slate-700 sm:border-2 shadow-lg flex items-center gap-1 sm:gap-1.5"
                     >
                       <span>👁️</span>
-                      Abrir
+                      <span className="hidden sm:inline">Abrir</span>
                     </button>
                     <button
                       onClick={() => removeFromFolder(s.id)}
-                      className="rounded-xl px-3 py-2 text-xs font-bold transition-all hover:scale-110 active:scale-95 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 border-2 border-red-400/60 shadow-lg flex items-center gap-1.5"
+                      className="rounded-lg sm:rounded-xl px-2 sm:px-3 py-1 sm:py-2 text-[10px] sm:text-xs font-bold transition-all hover:scale-110 active:scale-95 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 border border-red-400/60 sm:border-2 shadow-lg flex items-center gap-1 sm:gap-1.5"
                     >
                       <span>🗑️</span>
-                      Sacar
+                      <span className="hidden sm:inline">Sacar</span>
                     </button>
                   </div>
               </div>

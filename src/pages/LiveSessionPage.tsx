@@ -517,13 +517,13 @@ const LiveSessionPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-[280px,minmax(0,1fr)]">
+      <div className="grid gap-3 sm:gap-6 md:grid-cols-[280px,minmax(0,1fr)]">
         {/* Panel de control */}
-        <div className="rounded-2xl border border-purple-500/40 bg-gradient-to-br from-purple-900/20 via-slate-950/80 to-slate-950/80 p-5 space-y-5 text-xs shadow-[0_0_30px_rgba(168,85,247,0.2)]">
+        <div className="rounded-xl sm:rounded-2xl border border-purple-500/40 bg-gradient-to-br from-purple-900/20 via-slate-950/80 to-slate-950/80 p-3 sm:p-5 space-y-3 sm:space-y-5 text-xs shadow-[0_0_30px_rgba(168,85,247,0.2)]">
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-lg">🎵</span>
-              <p className="font-bold text-sm bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Canción actual</p>
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+              <span className="text-base sm:text-lg">🎵</span>
+              <p className="font-bold text-xs sm:text-sm bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Canción actual</p>
             </div>
 
             {isAdmin ? (
