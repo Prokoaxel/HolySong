@@ -33,21 +33,21 @@ const AppLayout: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/5 to-transparent animate-[shimmer_4s_ease-in-out_infinite]" />
           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-400/60 to-transparent" />
           
-          <div className="relative flex items-center justify-between px-4 md:px-8 py-3 fade-in">
-            <div className="flex items-center gap-3">
+          <div className="relative flex items-center justify-between px-2 sm:px-4 md:px-8 py-2 sm:py-3 fade-in">
+            <div className="flex items-center gap-1 sm:gap-3">
               {location.pathname !== '/app' && (
                 <button
                   onClick={handleBack}
-                  className="group relative px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border-2 border-slate-700 hover:border-purple-500/50 text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-lg flex items-center gap-1.5"
+                  className="group relative px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700 hover:border-purple-500/50 text-[10px] sm:text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-lg flex items-center gap-1"
                 >
                   <span className="group-hover:-translate-x-1 transition-transform">←</span>
-                  Volver
+                  <span className="hidden sm:inline">Volver</span>
                 </button>
               )}
               
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 sm:gap-3">
                 {/* Logo simple - corchea */}
-                <div className="relative w-10 h-10 group/logo">
+                <div className="relative w-7 h-7 sm:w-10 sm:h-10 group/logo">
                   <img 
                     src="/brand/note.svg" 
                     alt="HolySong" 
@@ -55,16 +55,16 @@ const AppLayout: React.FC = () => {
                   />
                 </div>
                 
-                <div className="hidden sm:block">
-                  <div className="flex items-center gap-2">
-                    <p className="text-base font-black bg-gradient-to-r from-purple-300 via-pink-300 to-teal-300 bg-clip-text text-transparent tracking-tight leading-none">
+                <div>
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <p className="text-sm sm:text-base font-black bg-gradient-to-r from-purple-300 via-pink-300 to-teal-300 bg-clip-text text-transparent tracking-tight leading-none">
                       HolySong
                     </p>
-                    <span className="px-1.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/40 text-[8px] font-bold text-purple-300 animate-pulse">
+                    <span className="px-1 sm:px-1.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/40 text-[7px] sm:text-[8px] font-bold text-purple-300 animate-pulse">
                       LIVE
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-400 font-semibold tracking-wider uppercase leading-none mt-0.5">
+                  <p className="hidden sm:block text-[10px] text-slate-400 font-semibold tracking-wider uppercase leading-none mt-0.5">
                     Letras & Acordes en Vivo
                   </p>
                 </div>
@@ -114,9 +114,9 @@ const AppLayout: React.FC = () => {
               </NavLink>
             </nav>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 sm:gap-3">
               {/* Card de usuario */}
-              <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/80 border-2 border-slate-700 backdrop-blur-sm">
+              <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/80 border-2 border-slate-700 backdrop-blur-sm">
                 <div className="relative w-7 h-7 rounded-full bg-gradient-to-br from-purple-600/30 via-pink-600/30 to-teal-600/30 border-2 border-purple-400/60 flex items-center justify-center">
                   <span className="text-sm">👤</span>
                   <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-slate-900 animate-pulse" />
@@ -132,12 +132,12 @@ const AppLayout: React.FC = () => {
               {user && (
                 <button
                   onClick={signOut}
-                  className="group/btn relative px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-xs font-black uppercase tracking-wider transition-all hover:scale-110 active:scale-95 border-2 border-red-400/50 shadow-lg shadow-red-500/20 overflow-hidden"
+                  className="group/btn relative px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all hover:scale-110 active:scale-95 border border-red-400/50 shadow-lg shadow-red-500/20 overflow-hidden"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover/btn:translate-x-[200%] transition-transform duration-700" />
-                  <span className="relative flex items-center gap-1.5">
+                  <span className="relative flex items-center gap-1">
                     <span className="text-sm group-hover/btn:rotate-12 transition-transform">🚪</span>
-                    <span className="hidden md:inline">Cerrar sesión</span>
+                    <span className="hidden sm:inline">Cerrar</span>
                   </span>
                 </button>
               )}
@@ -146,15 +146,16 @@ const AppLayout: React.FC = () => {
         </header>
 
         {/* CONTENIDO */}
-        <main className="flex-1 px-3 md:px-8 py-4 md:py-6 fade-in">
+        <main className="flex-1 px-2 sm:px-3 md:px-8 py-3 sm:py-4 md:py-6 fade-in">
           <Outlet />
         </main>
 
-        <footer className="border-t border-slate-900 bg-slate-950/80 text-[11px] text-slate-500 py-2 px-4 md:px-8">
-          <div className="flex items-center justify-between">
-            <span>Autor: Prokopczuk, Axel</span>
-            <span>HolySong © {new Date().getFullYear()}</span>
-            <span>Versión: 1.1.5</span>
+        <footer className="border-t border-slate-900 bg-slate-950/80 text-[9px] sm:text-[11px] text-slate-500 py-2 px-2 sm:px-4 md:px-8">
+          <div className="flex items-center justify-between gap-1 sm:gap-2">
+            <span className="hidden sm:inline">Autor: Prokopczuk, Axel</span>
+            <span className="sm:hidden">A. Prokopczuk</span>
+            <span className="text-[8px] sm:text-[11px]">HolySong © {new Date().getFullYear()}</span>
+            <span className="hidden sm:inline">Versión: 1.1.5</span>
           </div>
         </footer>
       </div>

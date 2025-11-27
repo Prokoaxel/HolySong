@@ -299,18 +299,18 @@ const ImportSongPage: React.FC = () => {
     : 'Guardar canción'
 
   return (
-    <div className="max-w-5xl mx-auto space-y-4 fade-in py-4">
+    <div className="max-w-5xl mx-auto space-y-3 sm:space-y-4 fade-in py-2 sm:py-4">
       {/* Header mejorado con gradiente y animación */}
-      <div className="relative rounded-xl bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900 border-2 border-purple-400/40 p-4 overflow-hidden">
+      <div className="relative rounded-lg sm:rounded-xl bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900 border border-purple-400/40 sm:border-2 p-3 sm:p-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-purple-500/10 to-pink-500/5 animate-[shimmer_3s_ease-in-out_infinite]" />
-        <div className="relative flex items-center gap-3">
+        <div className="relative flex items-center gap-2 sm:gap-3">
           <div className="relative">
             <div className="absolute inset-0 bg-purple-500/30 rounded-full blur-md animate-pulse" />
-            <span className="relative text-3xl">{isEditing ? '✏️' : '📥'}</span>
+            <span className="relative text-2xl sm:text-3xl">{isEditing ? '✏️' : '📥'}</span>
           </div>
           <div>
-            <h1 className="text-lg font-bold bg-gradient-to-r from-purple-200 to-pink-200 bg-clip-text text-transparent mb-1">{headerTitle}</h1>
-            <p className="text-xs text-slate-300 leading-relaxed">{headerSubtitle}</p>
+            <h1 className="text-sm sm:text-lg font-bold bg-gradient-to-r from-purple-200 to-pink-200 bg-clip-text text-transparent mb-1">{headerTitle}</h1>
+            <p className="text-[10px] sm:text-xs text-slate-300 leading-relaxed">{headerSubtitle}</p>
           </div>
         </div>
       </div>
@@ -320,13 +320,13 @@ const ImportSongPage: React.FC = () => {
       ) : (
         <>
           {/* archivo + OCR */}
-          <div className="rounded-2xl border-2 border-slate-700 hover:border-purple-500/50 bg-gradient-to-br from-slate-900/90 to-slate-800/80 p-6 space-y-4 text-sm transition-all hover:shadow-lg hover:shadow-purple-500/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">📄</span>
-                <p className="font-bold text-sm text-slate-200">Archivo (opcional)</p>
+          <div className="rounded-lg sm:rounded-2xl border border-slate-700 sm:border-2 hover:border-purple-500/50 bg-gradient-to-br from-slate-900/90 to-slate-800/80 p-3 sm:p-6 space-y-3 sm:space-y-4 text-sm transition-all hover:shadow-lg hover:shadow-purple-500/20">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-2 sm:mb-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <span className="text-xl sm:text-2xl">📄</span>
+                <p className="font-bold text-xs sm:text-sm text-slate-200">Archivo (opcional)</p>
               </div>
-              <span className="text-[10px] px-2 py-1 rounded-full bg-orange-500/10 border border-orange-400/30 text-orange-200">Solo imágenes</span>
+              <span className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-orange-500/10 border border-orange-400/30 text-orange-200">Solo imágenes</span>
             </div>
             
             <div className="relative">
@@ -334,11 +334,11 @@ const ImportSongPage: React.FC = () => {
                 type="file"
                 accept="image/*,.png,.jpg,.jpeg,.gif,.bmp"
                 onChange={handleFileChange}
-                className="w-full text-xs bg-slate-900/80 border-2 border-slate-700 rounded-lg px-4 py-3 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gradient-to-r file:from-purple-600 file:to-pink-600 file:text-white hover:file:from-purple-500 hover:file:to-pink-500 file:cursor-pointer transition-all"
+                className="w-full text-[11px] sm:text-xs bg-slate-900/80 border border-slate-700 sm:border-2 rounded-lg px-3 sm:px-4 py-2 sm:py-3 file:mr-2 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-3 sm:file:px-4 file:rounded-lg file:border-0 file:text-[10px] sm:file:text-xs file:font-semibold file:bg-gradient-to-r file:from-purple-600 file:to-pink-600 file:text-white hover:file:from-purple-500 hover:file:to-pink-500 file:cursor-pointer transition-all"
               />
-              <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
+              <p className="text-[9px] sm:text-[10px] text-slate-400 mt-1.5 sm:mt-2 flex items-center gap-1">
                 <span>💡</span>
-                Subí una captura o foto de la letra. PDF no soportado por el momento.
+                Subí una captura o foto de la letra.
               </p>
             </div>
             
@@ -354,33 +354,35 @@ const ImportSongPage: React.FC = () => {
             <button
               onClick={handleRunOcr}
               disabled={!file || ocrLoading}
-              className="w-full rounded-lg bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 disabled:from-slate-700 disabled:to-slate-700 px-5 py-3 text-sm font-bold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg flex items-center justify-center gap-2"
+              className="w-full rounded-lg bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 disabled:from-slate-700 disabled:to-slate-700 px-3 sm:px-5 py-2 sm:py-3 text-xs sm:text-sm font-bold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg flex items-center justify-center gap-1.5 sm:gap-2"
             >
               {ocrLoading ? (
                 <>
                   <span className="animate-spin">⚙️</span>
-                  Reconociendo texto...
+                  <span className="hidden sm:inline">Reconociendo texto...</span>
+                  <span className="sm:hidden">Reconociendo...</span>
                 </>
               ) : (
                 <>
                   <span>🔍</span>
-                  Reconocer texto (OCR)
+                  <span className="hidden sm:inline">Reconocer texto (OCR)</span>
+                  <span className="sm:hidden">OCR</span>
                 </>
               )}
             </button>
 
             {ocrText && (
-              <div className="mt-4 space-y-3 bg-gradient-to-br from-teal-900/20 to-purple-900/20 border-2 border-teal-400/40 rounded-xl p-4 animate-[fadeIn_300ms_ease]">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">✨</span>
-                  <p className="text-sm font-bold text-teal-200">
+              <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3 bg-gradient-to-br from-teal-900/20 to-purple-900/20 border border-teal-400/40 sm:border-2 rounded-lg sm:rounded-xl p-3 sm:p-4 animate-[fadeIn_300ms_ease]">
+                <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
+                  <span className="text-base sm:text-lg">✨</span>
+                  <p className="text-xs sm:text-sm font-bold text-teal-200">
                     Resultado de OCR
                   </p>
                 </div>
                 <textarea
                   value={ocrText}
                   onChange={e => setOcrText(e.target.value)}
-                  className="w-full h-32 rounded-lg bg-slate-900/80 border-2 border-slate-700 focus:border-teal-500/50 px-4 py-3 text-xs font-mono resize-none outline-none transition-all"
+                  className="w-full h-32 rounded-lg bg-slate-900/80 border border-slate-700 sm:border-2 focus:border-teal-500/50 px-3 sm:px-4 py-2 sm:py-3 text-[11px] sm:text-xs font-mono resize-none outline-none transition-all"
                   placeholder="El texto reconocido aparecerá aquí..."
                 />
                 <button
@@ -392,110 +394,112 @@ const ImportSongPage: React.FC = () => {
                         : ocrText,
                     }))
                   }
-                  className="w-full rounded-lg bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 px-4 py-2.5 text-xs font-bold transition-all hover:scale-105 shadow-lg flex items-center justify-center gap-2"
+                  className="w-full rounded-lg bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 px-3 sm:px-4 py-2 sm:py-2.5 text-[11px] sm:text-xs font-bold transition-all hover:scale-105 shadow-lg flex items-center justify-center gap-1.5 sm:gap-2"
                 >
                   <span>📝</span>
-                  Usar texto OCR en la letra
+                  Usar texto en la letra
                 </button>
               </div>
             )}
           </div>
 
           {/* formulario principal */}
-          <div className="rounded-2xl border-2 border-slate-700 hover:border-purple-500/50 bg-gradient-to-br from-slate-900 via-slate-900 to-purple-900/20 p-6 space-y-5 text-sm transition-all hover:shadow-lg hover:shadow-purple-500/20">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-2xl">🎵</span>
-              <h2 className="font-bold text-base text-slate-200">Datos de la canción</h2>
+          <div className="rounded-lg sm:rounded-2xl border border-slate-700 sm:border-2 hover:border-purple-500/50 bg-gradient-to-br from-slate-900 via-slate-900 to-purple-900/20 p-3 sm:p-6 space-y-3 sm:space-y-5 text-sm transition-all hover:shadow-lg hover:shadow-purple-500/20">
+            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-4">
+              <span className="text-xl sm:text-2xl">🎵</span>
+              <h2 className="font-bold text-sm sm:text-base text-slate-200">Datos de la canción</h2>
             </div>
             
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
               <div>
-                <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 mb-2">
+                <label className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold text-slate-300 mb-1.5 sm:mb-2">
                   <span>🎼</span>
                   Título
                 </label>
                 <input
                   value={form.title}
                   onChange={handleChange('title')}
-                  className="w-full rounded-lg bg-slate-900/80 border-2 border-slate-700 focus:border-purple-500/50 px-4 py-2.5 text-sm outline-none transition-all disabled:opacity-50"
+                  className="w-full rounded-lg bg-slate-900/80 border border-slate-700 sm:border-2 focus:border-purple-500/50 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none transition-all disabled:opacity-50"
                   placeholder="Ej: Toma tu lugar"
                   disabled={isEditingVersion}
                 />
               </div>
               <div>
-                <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 mb-2">
+                <label className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold text-slate-300 mb-1.5 sm:mb-2">
                   <span>👤</span>
                   Autor
                 </label>
                 <input
                   value={form.author}
                   onChange={handleChange('author')}
-                  className="w-full rounded-lg bg-slate-900/80 border-2 border-slate-700 focus:border-purple-500/50 px-4 py-2.5 text-sm outline-none transition-all disabled:opacity-50"
+                  className="w-full rounded-lg bg-slate-900/80 border border-slate-700 sm:border-2 focus:border-purple-500/50 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none transition-all disabled:opacity-50"
                   placeholder="Opcional"
                   disabled={isEditingVersion}
                 />
               </div>
               <div>
-                <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 mb-2">
+                <label className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold text-slate-300 mb-1.5 sm:mb-2">
                   <span>✍️</span>
                   Compositor
                 </label>
                 <input
                   value={form.composer}
                   onChange={handleChange('composer')}
-                  className="w-full rounded-lg bg-slate-900/80 border-2 border-slate-700 focus:border-purple-500/50 px-4 py-2.5 text-sm outline-none transition-all disabled:opacity-50"
+                  className="w-full rounded-lg bg-slate-900/80 border border-slate-700 sm:border-2 focus:border-purple-500/50 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none transition-all disabled:opacity-50"
                   placeholder="Opcional"
                   disabled={isEditingVersion}
                 />
               </div>
               <div>
-                <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 mb-2">
+                <label className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold text-slate-300 mb-1.5 sm:mb-2">
                   <span>🎹</span>
                   Tono
                 </label>
                 <input
                   value={form.tone}
                   onChange={handleChange('tone')}
-                  className="w-full rounded-lg bg-slate-900/80 border-2 border-slate-700 focus:border-orange-500/50 px-4 py-2.5 text-sm font-bold outline-none transition-all"
+                  className="w-full rounded-lg bg-slate-900/80 border border-slate-700 sm:border-2 focus:border-orange-500/50 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold outline-none transition-all"
                   placeholder="Ej: D, Em, F#..."
                 />
-                <div className="flex items-start gap-1 mt-2">
-                  <span className="text-[10px]">💡</span>
-                  <p className="text-[10px] text-slate-400 leading-relaxed">
-                    Este tono se agregará al principio como &quot;Tono: X&quot; y se usará para transponer.
+                <div className="flex items-start gap-0.5 sm:gap-1 mt-1.5 sm:mt-2">
+                  <span className="text-[9px] sm:text-[10px]">💡</span>
+                  <p className="text-[9px] sm:text-[10px] text-slate-400 leading-relaxed">
+                    Se usará para transponer.
                   </p>
                 </div>
               </div>
             </div>
 
             <div>
-              <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 mb-2">
+              <label className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold text-slate-300 mb-1.5 sm:mb-2">
                 <span>📝</span>
                 Letra con acordes
               </label>
               <textarea
                 value={form.content}
                 onChange={handleChange('content')}
-                className="w-full h-64 rounded-lg bg-slate-900/80 border-2 border-slate-700 focus:border-purple-500/50 px-4 py-3 text-sm font-mono resize-none outline-none transition-all"
+                className="w-full h-48 sm:h-64 rounded-lg bg-slate-900/80 border border-slate-700 sm:border-2 focus:border-purple-500/50 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-mono resize-none outline-none transition-all"
                 placeholder="Pegá aquí la letra con los acordes (Em, Bm, C#, etc.)"
               />
             </div>
 
-            <div className="flex justify-end pt-2 border-t border-slate-700">
+            <div className="flex justify-stretch sm:justify-end pt-2 border-t border-slate-700">
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-slate-700 disabled:to-slate-700 px-8 py-3 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 shadow-lg flex items-center gap-2"
+                className="w-full sm:w-auto rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-slate-700 disabled:to-slate-700 px-6 sm:px-8 py-2.5 sm:py-3 text-xs sm:text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 shadow-lg flex items-center justify-center gap-1.5 sm:gap-2"
               >
                 {saving ? (
                   <>
                     <span className="animate-spin">⚙️</span>
-                    {saveButtonLabel}
+                    <span className="hidden sm:inline">{saveButtonLabel}</span>
+                    <span className="sm:hidden">Guardando...</span>
                   </>
                 ) : (
                   <>
                     <span>💾</span>
-                    {saveButtonLabel}
+                    <span className="hidden sm:inline">{saveButtonLabel}</span>
+                    <span className="sm:hidden">Guardar</span>
                   </>
                 )}
               </button>

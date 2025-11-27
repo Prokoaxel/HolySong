@@ -60,49 +60,50 @@ const FoldersPage: React.FC = () => {
   // const filteredSongs = useMemo(() => [], [songSearch]) // not used in folder page
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto fade-in py-4">
+    <div className="space-y-4 sm:space-y-6 max-w-5xl mx-auto fade-in py-2 sm:py-4">
       {/* Header mejorado con gradiente */}
-      <div className="relative rounded-xl bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900 border-2 border-purple-400/40 p-5 overflow-hidden">
+      <div className="relative rounded-lg sm:rounded-xl bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900 border border-purple-400/40 sm:border-2 p-3 sm:p-5 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-purple-500/10 to-pink-500/5 animate-[shimmer_3s_ease-in-out_infinite]" />
-        <div className="relative flex items-center gap-3">
+        <div className="relative flex items-center gap-2 sm:gap-3">
           <div className="relative">
             <div className="absolute inset-0 bg-purple-500/30 rounded-full blur-lg animate-pulse" />
-            <span className="relative text-4xl">📁</span>
+            <span className="relative text-2xl sm:text-4xl">📁</span>
           </div>
           <div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-purple-200 to-pink-200 bg-clip-text text-transparent mb-1">
+            <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-purple-200 to-pink-200 bg-clip-text text-transparent mb-1">
               Mis Carpetas
             </h1>
-            <p className="text-xs text-slate-300">
-              Organizá tus canciones en carpetas personalizadas
+            <p className="text-[10px] sm:text-xs text-slate-300">
+              Organizá tus canciones
             </p>
           </div>
         </div>
       </div>
 
       {/* Crear nueva carpeta - Card mejorado */}
-      <div className="rounded-xl border-2 border-slate-700 hover:border-purple-500/50 bg-gradient-to-br from-slate-900/90 to-slate-800/80 p-5 transition-all hover:shadow-lg hover:shadow-purple-500/20">
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-2xl">➕</span>
-          <h2 className="text-sm font-bold text-slate-200">Nueva Carpeta</h2>
+      <div className="rounded-lg sm:rounded-xl border border-slate-700 sm:border-2 hover:border-purple-500/50 bg-gradient-to-br from-slate-900/90 to-slate-800/80 p-3 sm:p-5 transition-all hover:shadow-lg hover:shadow-purple-500/20">
+        <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+          <span className="text-xl sm:text-2xl">➕</span>
+          <h2 className="text-xs sm:text-sm font-bold text-slate-200">Nueva Carpeta</h2>
         </div>
-        <div className="flex gap-3 items-center">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
           <input
             value={newFolderName}
             onChange={e => setNewFolderName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleCreateFolder()}
-            placeholder="Nombre de la carpeta (Ej: Domingo 25, Navidad, etc.)"
-            className="flex-1 rounded-lg bg-slate-900/80 border-2 border-slate-700 focus:border-purple-500/50 px-4 py-2.5 text-sm outline-none transition-all"
+            placeholder="Nombre (Ej: Domingo 25)"
+            className="flex-1 rounded-lg bg-slate-900/80 border border-slate-700 sm:border-2 focus:border-purple-500/50 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none transition-all"
           />
           <button
             onClick={handleCreateFolder}
             disabled={creating || !newFolderName.trim()}
-            className="rounded-lg bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 disabled:from-slate-700 disabled:to-slate-700 px-6 py-2.5 text-sm font-bold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg flex items-center gap-2"
+            className="rounded-lg bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 disabled:from-slate-700 disabled:to-slate-700 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-bold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg flex items-center justify-center gap-1.5 sm:gap-2"
           >
             {creating ? (
               <>
                 <span className="animate-spin">⚙️</span>
-                Creando...
+                <span className="hidden sm:inline">Creando...</span>
+                <span className="sm:hidden">Creando</span>
               </>
             ) : (
               <>
@@ -115,53 +116,54 @@ const FoldersPage: React.FC = () => {
       </div>
 
       {/* Lista de carpetas */}
-      <div className="rounded-xl border-2 border-slate-700 hover:border-purple-500/50 bg-gradient-to-br from-slate-900/90 to-slate-800/80 p-4 transition-all hover:shadow-lg hover:shadow-purple-500/20">
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-2xl">📂</span>
-          <h2 className="text-sm font-bold text-slate-200">Tus Carpetas</h2>
+      <div className="rounded-lg sm:rounded-xl border border-slate-700 sm:border-2 hover:border-purple-500/50 bg-gradient-to-br from-slate-900/90 to-slate-800/80 p-2 sm:p-4 transition-all hover:shadow-lg hover:shadow-purple-500/20">
+        <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+          <span className="text-xl sm:text-2xl">📂</span>
+          <h2 className="text-xs sm:text-sm font-bold text-slate-200">Tus Carpetas</h2>
           {folders.length > 0 && (
-            <span className="ml-auto text-xs px-2 py-1 rounded-full bg-purple-500/10 border border-purple-400/30 text-purple-200">
-              {folders.length} carpeta{folders.length !== 1 ? 's' : ''}
+            <span className="ml-auto text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-purple-500/10 border border-purple-400/30 text-purple-200">
+              {folders.length}
             </span>
           )}
         </div>
         
         {folders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-12">
-            <span className="text-5xl">📂</span>
-            <p className="text-sm text-slate-300 font-medium">
+          <div className="flex flex-col items-center justify-center gap-2 sm:gap-3 py-8 sm:py-12">
+            <span className="text-3xl sm:text-5xl">📂</span>
+            <p className="text-xs sm:text-sm text-slate-300 font-medium">
               No tenés carpetas creadas
             </p>
-            <p className="text-xs text-slate-400">
-              Creá tu primera carpeta para organizar canciones
+            <p className="text-[10px] sm:text-xs text-slate-400">
+              Creá tu primera carpeta
             </p>
           </div>
         ) : (
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-2 sm:gap-3 md:grid-cols-2">
             {folders.map((f, idx) => (
               <button
                 key={f.id}
                 onClick={() => navigate(`/app/folders/${f.id}`)}
                 style={{ animationDelay: `${idx * 50}ms` }}
-                className="group text-left rounded-lg px-4 py-4 bg-slate-900/60 hover:bg-slate-800/80 border border-slate-700 hover:border-purple-500/50 transition-all hover:scale-[1.02] animate-[fadeIn_300ms_ease]"
+                className="group text-left rounded-lg px-2.5 sm:px-4 py-3 sm:py-4 bg-slate-900/60 hover:bg-slate-800/80 border border-slate-700 hover:border-purple-500/50 transition-all hover:scale-[1.02] animate-[fadeIn_300ms_ease]"
               >
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-slate-700 group-hover:border-purple-500/50 flex items-center justify-center text-2xl transition-all">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="relative flex-shrink-0">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-slate-700 group-hover:border-purple-500/50 flex items-center justify-center text-xl sm:text-2xl transition-all">
                       📁
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-100 truncate group-hover:text-purple-200 transition-colors">
+                    <p className="text-xs sm:text-sm font-semibold text-slate-100 truncate group-hover:text-purple-200 transition-colors">
                       {f.name}
                     </p>
-                    <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
+                    <p className="text-[10px] sm:text-xs text-slate-400 flex items-center gap-0.5 sm:gap-1 mt-0.5 sm:mt-1">
                       <span>📄</span>
-                      Haz clic para ver contenido
+                      <span className="hidden sm:inline">Haz clic para ver contenido</span>
+                      <span className="sm:hidden">Ver contenido</span>
                     </p>
                   </div>
-                  <div className="text-slate-400 group-hover:text-purple-400 transition-colors">
-                    <span className="text-xl">→</span>
+                  <div className="text-slate-400 group-hover:text-purple-400 transition-colors flex-shrink-0">
+                    <span className="text-base sm:text-xl">→</span>
                   </div>
                 </div>
               </button>

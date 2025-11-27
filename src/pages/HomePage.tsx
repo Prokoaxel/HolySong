@@ -43,7 +43,7 @@ const HomePage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* HERO con gradiente y animaciones */}
-      <div className="relative rounded-3xl border-2 border-purple-500/30 bg-gradient-to-br from-slate-950 via-purple-950/20 to-slate-950 p-8 md:p-12 overflow-hidden shadow-2xl shadow-purple-500/10">
+      <div className="relative rounded-2xl sm:rounded-3xl border border-purple-500/30 bg-gradient-to-br from-slate-950 via-purple-950/20 to-slate-950 p-4 sm:p-6 md:p-12 overflow-hidden shadow-2xl shadow-purple-500/10">
         {/* Efectos de fondo */}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/5 to-transparent animate-[shimmer_4s_ease-in-out_infinite]" />
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-400/60 to-transparent" />
@@ -73,12 +73,12 @@ const HomePage: React.FC = () => {
             <span className="text-2xl animate-bounce-slow">🎵</span>
           </div>
           
-          <h1 className="text-3xl md:text-5xl font-black bg-gradient-to-r from-purple-200 via-pink-200 to-teal-200 bg-clip-text text-transparent leading-tight">
+          <h1 className="text-xl sm:text-2xl md:text-5xl font-black bg-gradient-to-r from-purple-200 via-pink-200 to-teal-200 bg-clip-text text-transparent leading-tight">
             Tu control para acordes, letras y sesiones en vivo
           </h1>
           
-          <p className="text-sm md:text-base text-slate-300 max-w-2xl leading-relaxed">
-            🎸 Buscá canciones • 📁 Armá carpetas por servicio • 🎚️ Sincronizá al equipo en tiempo real con una sesión compartida
+          <p className="text-xs sm:text-sm md:text-base text-slate-300 max-w-2xl leading-relaxed">
+            🎸 Buscá canciones • 📁 Armá carpetas por servicio • 🎚️ Sincronizá al equipo en tiempo real
           </p>
           
           <div className="flex flex-wrap items-center gap-3 pt-2">
