@@ -197,20 +197,24 @@ body {
   background-color: rgba(45,212,191,0.55);
 }
 
-/* MOBILE RESPONSIVE - Forzar estilos móvil en pantallas pequeñas */
-/* Por defecto en móvil */
+/* MOBILE RESPONSIVE - Usar IDs para máxima especificidad */
+/* Por defecto = MÓVIL (mobile-first) */
+#desktop-header,
 .desktop-header {
   display: none !important;
 }
 
+#mobile-header,
 .mobile-header {
   display: flex !important;
 }
 
+#bottom-nav,
 .bottom-nav-mobile {
   display: flex !important;
 }
 
+#desktop-footer,
 .desktop-footer {
   display: none !important;
 }
@@ -219,20 +223,24 @@ body {
   padding-bottom: 5rem !important;
 }
 
-/* Desktop - solo si pantalla es mayor a 768px */
+/* DESKTOP - solo si pantalla ≥ 768px */
 @media screen and (min-width: 768px) {
+  #desktop-header,
   .desktop-header {
     display: block !important;
   }
   
+  #mobile-header,
   .mobile-header {
     display: none !important;
   }
   
+  #bottom-nav,
   .bottom-nav-mobile {
     display: none !important;
   }
   
+  #desktop-footer,
   .desktop-footer {
     display: block !important;
   }

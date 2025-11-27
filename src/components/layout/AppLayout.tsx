@@ -28,7 +28,7 @@ const AppLayout: React.FC = () => {
 
       <div className="relative min-h-screen flex flex-col">
         {/* HEADER - Solo visible en Desktop */}
-        <header className="desktop-header relative border-b-2 border-purple-500/30 bg-gradient-to-r from-slate-950 via-purple-950/20 to-slate-950 backdrop-blur-xl shadow-xl shadow-purple-500/10 overflow-hidden">
+        <header id="desktop-header" className="desktop-header relative border-b-2 border-purple-500/30 bg-gradient-to-r from-slate-950 via-purple-950/20 to-slate-950 backdrop-blur-xl shadow-xl shadow-purple-500/10 overflow-hidden">
           {/* Efectos de fondo */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/5 to-transparent animate-[shimmer_4s_ease-in-out_infinite]" />
           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-400/60 to-transparent" />
@@ -146,7 +146,7 @@ const AppLayout: React.FC = () => {
         </header>
 
         {/* MOBILE HEADER - Solo visible en móvil */}
-        <header className="mobile-header sticky top-0 z-40 border-b-2 border-purple-500/30 bg-gradient-to-r from-slate-950 via-purple-950/20 to-slate-950 backdrop-blur-xl shadow-xl shadow-purple-500/10">
+        <header id="mobile-header" className="mobile-header sticky top-0 z-40 border-b-2 border-purple-500/30 bg-gradient-to-r from-slate-950 via-purple-950/20 to-slate-950 backdrop-blur-xl shadow-xl shadow-purple-500/10">
           <div className="flex items-center justify-between px-3 py-2.5">
             {location.pathname !== '/app' && (
               <button
@@ -163,9 +163,12 @@ const AppLayout: React.FC = () => {
                 alt="HolySong" 
                 className="w-7 h-7 filter brightness-0 invert" 
               />
-              <p className="text-base font-black bg-gradient-to-r from-purple-300 via-pink-300 to-teal-300 bg-clip-text text-transparent">
-                HolySong
-              </p>
+              <div className="flex flex-col items-center">
+                <p className="text-base font-black bg-gradient-to-r from-purple-300 via-pink-300 to-teal-300 bg-clip-text text-transparent">
+                  HolySong
+                </p>
+                <span className="text-[8px] text-slate-400">📱 Móvil</span>
+              </div>
             </div>
             
             {user && (
@@ -185,7 +188,7 @@ const AppLayout: React.FC = () => {
         </main>
 
         {/* BOTTOM NAVIGATION - Solo visible en móvil */}
-        <nav className="bottom-nav-mobile fixed bottom-0 left-0 right-0 z-50 border-t-4 border-teal-500/60 bg-gradient-to-r from-slate-950 via-purple-950/40 to-slate-950 backdrop-blur-xl shadow-[0_-8px_30px_rgba(20,184,166,0.4)]">
+        <nav id="bottom-nav" className="bottom-nav-mobile fixed bottom-0 left-0 right-0 z-50 border-t-4 border-teal-500/60 bg-gradient-to-r from-slate-950 via-purple-950/40 to-slate-950 backdrop-blur-xl shadow-[0_-8px_30px_rgba(20,184,166,0.4)]">
           <div className="flex justify-around items-center px-1 py-3">
             <NavLink to="/app" end className={({ isActive }) =>
               'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all active:scale-95 min-w-[64px] ' +
@@ -239,7 +242,7 @@ const AppLayout: React.FC = () => {
           </div>
         </nav>
 
-        <footer className="desktop-footer border-t border-slate-900 bg-slate-950/80 text-[11px] text-slate-500 py-2 px-4 md:px-8">
+        <footer id="desktop-footer" className="desktop-footer border-t border-slate-900 bg-slate-950/80 text-[11px] text-slate-500 py-2 px-4 md:px-8">
           <div className="flex items-center justify-between gap-2">
             <span>Autor: Prokopczuk, Axel</span>
             <span>HolySong © {new Date().getFullYear()}</span>
