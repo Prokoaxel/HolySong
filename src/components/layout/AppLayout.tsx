@@ -243,7 +243,7 @@ const AppLayout: React.FC = () => {
           <div className="flex items-center justify-between gap-2">
             <span>Autor: Prokopczuk, Axel</span>
             <span>HolySong © {new Date().getFullYear()}</span>
-            <span>Versión: 1.2.0</span>
+            <span>v1.2.0-mobile</span>
           </div>
         </footer>
       </div>
