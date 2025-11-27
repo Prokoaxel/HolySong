@@ -460,17 +460,17 @@ const LiveSessionPage: React.FC = () => {
 
   // UI dentro de la sesión
   return (
-    <div className="space-y-6 animate-[fadeIn_400ms_ease]">
+    <div className="space-y-3 sm:space-y-6 animate-[fadeIn_400ms_ease]">
       {/* Header sesión */}
-      <div className="flex items-center justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-teal-900/30 via-purple-900/30 to-pink-900/30 border border-teal-500/40">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl animate-pulse">🔴</span>
-            <p className="text-xs font-bold uppercase tracking-wider text-teal-300">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-teal-900/30 via-purple-900/30 to-pink-900/30 border border-teal-500/40">
+        <div className="space-y-1.5 sm:space-y-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="text-xl sm:text-2xl animate-pulse">🔴</span>
+            <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-teal-300">
               Sesión en vivo
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
             <button
               onClick={copyCode}
               className="group px-3 py-1.5 rounded-lg bg-gradient-to-r from-teal-500 to-teal-600 border-2 border-teal-400 shadow-lg shadow-teal-500/50 hover:from-teal-400 hover:to-teal-500 hover:scale-105 transition-all duration-200 cursor-pointer relative"
@@ -529,7 +529,7 @@ const LiveSessionPage: React.FC = () => {
             {isAdmin ? (
               <>
                 {/* Carpeta */}
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 mb-2">
+                <label className="flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs font-semibold text-slate-300 mb-1.5 sm:mb-2">
                   <span>📁</span>
                   Carpeta
                 </label>
@@ -540,9 +540,9 @@ const LiveSessionPage: React.FC = () => {
                     setSelectedFolderId(id)
                     loadSongsForFolder(id || undefined)
                   }}
-                  className="w-full rounded-xl bg-slate-900/80 border-2 border-purple-500/30 px-3 py-2.5 text-xs font-medium focus:border-purple-400/60 focus:ring-2 focus:ring-purple-500/30 transition-all mb-3"
+                  className="w-full rounded-lg sm:rounded-xl bg-slate-900/80 border border-purple-500/30 sm:border-2 px-2 sm:px-3 py-2 sm:py-2.5 text-[11px] sm:text-xs font-medium focus:border-purple-400/60 focus:ring-2 focus:ring-purple-500/30 transition-all mb-2 sm:mb-3"
                 >
-                  <option value="">📁 Todas las carpetas</option>
+                  <option value="">📁 Todas</option>
                   {folders.map(f => (
                     <option key={f.id} value={f.id}>
                       📂 {f.name}
@@ -551,7 +551,7 @@ const LiveSessionPage: React.FC = () => {
                 </select>
 
                 {/* Canción */}
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 mb-2">
+                <label className="flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs font-semibold text-slate-300 mb-1.5 sm:mb-2">
                   <span>🎼</span>
                   Canción
                 </label>
@@ -561,7 +561,7 @@ const LiveSessionPage: React.FC = () => {
                     const songId = e.target.value || null
                     updateSession({ current_song: songId as any })
                   }}
-                  className="w-full rounded-xl bg-slate-900/80 border-2 border-purple-500/30 px-3 py-2.5 text-xs font-medium focus:border-purple-400/60 focus:ring-2 focus:ring-purple-500/30 transition-all"
+                  className="w-full rounded-lg sm:rounded-xl bg-slate-900/80 border border-purple-500/30 sm:border-2 px-2 sm:px-3 py-2 sm:py-2.5 text-[11px] sm:text-xs font-medium focus:border-purple-400/60 focus:ring-2 focus:ring-purple-500/30 transition-all"
                 >
                   <option value="">🚫 Ninguna</option>
                   {songs.map(s => (
@@ -572,19 +572,19 @@ const LiveSessionPage: React.FC = () => {
                 </select>
 
                 {/* Botones anterior / siguiente */}
-                <div className="mt-3 flex gap-2">
+                <div className="mt-2 sm:mt-3 flex gap-1.5 sm:gap-2">
                   <button
                     onClick={goToPrevSong}
-                    className="flex-1 rounded-xl bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 py-2 text-xs font-semibold transition-all hover:scale-105 border border-slate-600 flex items-center justify-center gap-1"
+                    className="flex-1 rounded-lg sm:rounded-xl bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 py-1.5 sm:py-2 text-[11px] sm:text-xs font-semibold transition-all hover:scale-105 border border-slate-600 flex items-center justify-center gap-0.5 sm:gap-1"
                   >
                     <span>⬅️</span>
-                    Anterior
+                    <span className="hidden sm:inline">Anterior</span>
                   </button>
                   <button
                     onClick={goToNextSong}
-                    className="flex-1 rounded-xl bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 py-2 text-xs font-semibold transition-all hover:scale-105 border border-slate-600 flex items-center justify-center gap-1"
+                    className="flex-1 rounded-lg sm:rounded-xl bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 py-1.5 sm:py-2 text-[11px] sm:text-xs font-semibold transition-all hover:scale-105 border border-slate-600 flex items-center justify-center gap-0.5 sm:gap-1"
                   >
-                    Siguiente
+                    <span className="hidden sm:inline">Siguiente</span>
                     <span>➡️</span>
                   </button>
                 </div>
@@ -592,16 +592,17 @@ const LiveSessionPage: React.FC = () => {
                 {/* Botón para abrir modal de agregar canción */}
                 <button
                   onClick={() => setShowAddSongModal(true)}
-                  className="mt-3 w-full rounded-xl bg-gradient-to-r from-purple-800 to-purple-700 hover:from-purple-700 hover:to-purple-600 py-2.5 text-xs font-bold transition-all hover:scale-105 border border-purple-600 flex items-center justify-center gap-2 shadow-lg"
+                  className="mt-2 sm:mt-3 w-full rounded-lg sm:rounded-xl bg-gradient-to-r from-purple-800 to-purple-700 hover:from-purple-700 hover:to-purple-600 py-2 sm:py-2.5 text-[11px] sm:text-xs font-bold transition-all hover:scale-105 border border-purple-600 flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg"
                 >
-                  <span className="text-base">🔍</span>
-                  Buscar y agregar canción
+                  <span className="text-sm sm:text-base">🔍</span>
+                  <span className="hidden sm:inline">Buscar y agregar canción</span>
+                  <span className="sm:hidden">Agregar</span>
                 </button>
 
-                <p className="text-[10px] text-slate-500 mt-2">
+                <p className="text-[9px] sm:text-[10px] text-slate-500 mt-1.5 sm:mt-2">
                   {selectedFolderId 
-                    ? '📁 Las canciones se agregarán a la carpeta seleccionada' 
-                    : '⏱️ Sin carpeta: las canciones se agregarán temporalmente'}
+                    ? '📁 Se agregará a la carpeta' 
+                    : '⏱️ Agregará temporalmente'}
                 </p>
               </>
             ) : (
@@ -613,56 +614,56 @@ const LiveSessionPage: React.FC = () => {
             )}
           </div>
 
-          <div className="border-t border-purple-500/20 pt-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🎸</span>
-              <p className="font-bold text-sm bg-gradient-to-r from-teal-400 to-teal-300 bg-clip-text text-transparent">Tono (transposición)</p>
+          <div className="border-t border-purple-500/20 pt-3 sm:pt-4 space-y-2 sm:space-y-3">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-base sm:text-lg">🎸</span>
+              <p className="font-bold text-xs sm:text-sm bg-gradient-to-r from-teal-400 to-teal-300 bg-clip-text text-transparent">Tono</p>
             </div>
-            <div className="px-3 py-2 rounded-lg bg-slate-900/60 border border-teal-500/30">
-              <p className="text-xs text-slate-300">
-                Semitonos:{' '}
-                <span className="font-bold text-lg text-teal-300">
+            <div className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-slate-900/60 border border-teal-500/30">
+              <p className="text-[11px] sm:text-xs text-slate-300">
+                <span className="hidden sm:inline">Semitonos: </span>
+                <span className="font-bold text-base sm:text-lg text-teal-300">
                   {session.transpose > 0 ? '+' : ''}{session.transpose}
                 </span>
                 {currentSong?.transposeCustom !== undefined && currentSong.transposeCustom !== 0 && (
                   <>
-                    <span className="text-slate-500 mx-1">+</span>
-                    <span className="font-bold text-sm text-purple-400">
+                    <span className="text-slate-500 mx-0.5 sm:mx-1">+</span>
+                    <span className="font-bold text-xs sm:text-sm text-purple-400">
                       {currentSong.transposeCustom > 0 ? '+' : ''}{currentSong.transposeCustom}
                     </span>
-                    <span className="text-[10px] text-purple-400/70 ml-1">(carpeta)</span>
+                    <span className="text-[9px] sm:text-[10px] text-purple-400/70 ml-0.5 sm:ml-1">(carpeta)</span>
                   </>
                 )}
               </p>
               {currentSong?.transposeCustom !== undefined && currentSong.transposeCustom !== 0 && (
-                <p className="text-[10px] text-slate-400 mt-1">
+                <p className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5 sm:mt-1">
                   Total: <span className="font-bold text-teal-300">
                     {session.transpose + currentSong.transposeCustom > 0 ? '+' : ''}{session.transpose + currentSong.transposeCustom}
-                  </span> semitonos
+                  </span>
                 </p>
               )}
             </div>
             {isAdmin && (
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 sm:gap-2">
                 <button
                   onClick={() =>
                     updateSession({ transpose: session.transpose - 1 })
                   }
-                  className="flex-1 rounded-xl bg-gradient-to-r from-red-900/40 to-red-800/40 hover:from-red-800/60 hover:to-red-700/60 py-2 text-xs font-bold transition-all hover:scale-105 border border-red-500/40"
+                  className="flex-1 rounded-lg sm:rounded-xl bg-gradient-to-r from-red-900/40 to-red-800/40 hover:from-red-800/60 hover:to-red-700/60 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold transition-all hover:scale-105 border border-red-500/40"
                 >
                   - ½
                 </button>
                 <button
                   onClick={() => updateSession({ transpose: 0 })}
-                  className="flex-1 rounded-xl bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 py-2 text-[10px] font-bold transition-all hover:scale-105 border border-slate-600"
+                  className="flex-1 rounded-lg sm:rounded-xl bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 py-1.5 sm:py-2 text-[10px] sm:text-[10px] font-bold transition-all hover:scale-105 border border-slate-600"
                 >
-                  Reset
+                  0
                 </button>
                 <button
                   onClick={() =>
                     updateSession({ transpose: session.transpose + 1 })
                   }
-                  className="flex-1 rounded-xl bg-gradient-to-r from-green-900/40 to-green-800/40 hover:from-green-800/60 hover:to-green-700/60 py-2 text-xs font-bold transition-all hover:scale-105 border border-green-500/40"
+                  className="flex-1 rounded-lg sm:rounded-xl bg-gradient-to-r from-green-900/40 to-green-800/40 hover:from-green-800/60 hover:to-green-700/60 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold transition-all hover:scale-105 border border-green-500/40"
                 >
                   + ½
                 </button>
@@ -670,15 +671,15 @@ const LiveSessionPage: React.FC = () => {
             )}
           </div>
 
-          <div className="border-t border-purple-500/20 pt-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🎚️</span>
-              <p className="font-bold text-sm bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Capo</p>
+          <div className="border-t border-purple-500/20 pt-3 sm:pt-4 space-y-2 sm:space-y-3">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-base sm:text-lg">🏚️</span>
+              <p className="font-bold text-xs sm:text-sm bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Capo</p>
             </div>
-            <div className="px-3 py-2 rounded-lg bg-slate-900/60 border border-purple-500/30">
-              <p className="text-xs text-slate-300">
-                Traste:{' '}
-                <span className="font-bold text-lg text-purple-300">
+            <div className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-slate-900/60 border border-purple-500/30">
+              <p className="text-[11px] sm:text-xs text-slate-300">
+                <span className="hidden sm:inline">Traste: </span>
+                <span className="font-bold text-base sm:text-lg text-purple-300">
                   {session.capo}
                 </span>
               </p>
@@ -698,14 +699,14 @@ const LiveSessionPage: React.FC = () => {
           </div>
 
           {!isAdmin && (
-            <p className="text-[10px] text-slate-500 pt-2 border-t border-slate-900">
-              Los cambios de tono y capo los controla el administrador.
+            <p className="text-[9px] sm:text-[10px] text-slate-500 pt-1.5 sm:pt-2 border-t border-slate-900">
+              Tono y capo: controlado por admin.
             </p>
           )}
         </div>
 
         {/* Visor compartido */}
-        <div className="rounded-2xl border border-teal-500/40 bg-gradient-to-br from-slate-950/80 via-teal-950/20 to-slate-950/80 p-6 shadow-[0_0_30px_rgba(20,184,166,0.2)]">
+        <div className="rounded-xl sm:rounded-2xl border border-teal-500/40 bg-gradient-to-br from-slate-950/80 via-teal-950/20 to-slate-950/80 p-3 sm:p-6 shadow-[0_0_30px_rgba(20,184,166,0.2)]">
           {currentSong ? (
             <SongViewer
               title={currentSong.title}
@@ -715,11 +716,11 @@ const LiveSessionPage: React.FC = () => {
               externalCapo={session.capo}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
-              <div className="text-6xl opacity-30">🎵</div>
-              <p className="text-sm text-slate-400 max-w-md">
-                Todavía no hay una canción seleccionada para esta sesión.
-                {isAdmin && ' 👈 Elegí una desde el panel de la izquierda.'}
+            <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 py-12 sm:py-20 text-center">
+              <div className="text-4xl sm:text-6xl opacity-30">🎵</div>
+              <p className="text-xs sm:text-sm text-slate-400 max-w-md px-4">
+                No hay canción seleccionada.
+                {isAdmin && ' Elegí una desde el panel.'}
               </p>
             </div>
           )}
