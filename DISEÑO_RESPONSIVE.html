@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HolySong - Mockup Diseño Responsivo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #e2e8f0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            background: linear-gradient(to right, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            animation: fadeIn 1s ease;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+        
+        .section {
+            background: rgba(30, 41, 59, 0.5);
+            border: 2px solid #374151;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            animation: slideUp 0.8s ease;
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+            color: #a78bfa;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .device-comparison {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .device-mockup {
+            background: #1e293b;
+            border: 3px solid #475569;
+            border-radius: 20px;
+            padding: 1.5rem;
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .device-mockup:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(168, 85, 247, 0.3);
+        }
+        
+        .device-label {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(to right, #8b5cf6, #ec4899);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .mobile-mockup {
+            max-width: 375px;
+            margin: 0 auto;
+        }
+        
+        .desktop-mockup {
+            width: 100%;
+        }
+        
+        .screen {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 1rem;
+            min-height: 400px;
+            border: 2px solid #334155;
+        }
+        
+        .header-example {
+            background: linear-gradient(to right, #1e1b4b, #581c87);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border: 2px solid #7c3aed;
+        }
+        
+        .mobile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .desktop-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-desktop {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .nav-button {
+            background: #334155;
+            color: #cbd5e1;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            border: 1px solid #475569;
+        }
+        
+        .nav-button.active {
+            background: linear-gradient(to right, #14b8a6, #0d9488);
+            color: white;
+            border-color: #2dd4bf;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1e293b;
+            border-top: 2px solid #7c3aed;
+            padding: 0.75rem;
+            display: flex;
+            justify-content: space-around;
+            gap: 0.25rem;
+            box-shadow: 0 -4px 20px rgba(124, 58, 237, 0.3);
+        }
+        
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            transition: all 0.2s;
+        }
+        
+        .bottom-nav-item:hover,
+        .bottom-nav-item.active {
+            background: rgba(124, 58, 237, 0.2);
+            color: #c084fc;
+        }
+        
+        .bottom-nav-icon {
+            font-size: 1.5rem;
+        }
+        
+        .content-example {
+            padding: 1rem 0;
+        }
+        
+        .card-grid {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .mobile-cards {
+            grid-template-columns: 1fr;
+        }
+        
+        .desktop-cards {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        
+        .card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border: 2px solid #475569;
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            border-color: #a78bfa;
+            transform: scale(1.02);
+        }
+        
+        .card-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .card-title {
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .card-description {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            line-height: 1.4;
+        }
+        
+        .feature-list {
+            list-style: none;
+            margin-top: 1rem;
+        }
+        
+        .feature-item {
+            padding: 0.75rem;
+            background: rgba(124, 58, 237, 0.1);
+            border-left: 3px solid #a78bfa;
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+        }
+        
+        .feature-item strong {
+            color: #c084fc;
+        }
+        
+        .comparison-table {
+            width: 100%;
+            margin-top: 1rem;
+            border-collapse: collapse;
+        }
+        
+        .comparison-table th {
+            background: #7c3aed;
+            padding: 0.75rem;
+            text-align: left;
+            border-radius: 4px;
+        }
+        
+        .comparison-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .comparison-table tr:hover {
+            background: rgba(124, 58, 237, 0.1);
+        }
+        
+        .emoji {
+            font-size: 1.2rem;
+        }
+        
+        .highlight {
+            background: linear-gradient(to right, #7c3aed, #ec4899);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .decision-box {
+            background: linear-gradient(135deg, #581c87 0%, #7c3aed 100%);
+            border: 3px solid #a78bfa;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 2rem;
+            text-align: center;
+        }
+        
+        .decision-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #fde047;
+        }
+        
+        .decision-options {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+        }
+        
+        .decision-option {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 1.5rem;
+            min-width: 200px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .decision-option:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #fde047;
+            transform: scale(1.05);
+        }
+        
+        .option-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .option-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .section {
+                padding: 1rem;
+            }
+            
+            .device-comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱💻 HolySong - Diseño Responsivo</h1>
+        <p class="subtitle">Visualización del diseño adaptativo para Móvil y PC</p>
+        
+        <!-- SECCIÓN 1: Navegación -->
+        <div class="section">
+            <h2 class="section-title">🧭 Navegación Propuesta</h2>
+            <p style="margin-bottom: 2rem;">El cambio más importante es cómo el usuario navega en cada dispositivo.</p>
+            
+            <div class="device-comparison">
+                <!-- MÓVIL -->
+                <div class="device-mockup mobile-mockup">
+                    <div class="device-label">📱 Móvil</div>
+                    <div class="screen">
+                        <div class="header-example">
+                            <div class="mobile-header">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="font-size: 1.5rem;">🎵</span>
+                                    <strong>HolySong</strong>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <span style="background: #334155; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">👤</span>
+                                    <span style="background: #dc2626; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">🚪</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="content-example">
+                            <div style="text-align: center; padding: 2rem; color: #64748b;">
+                                <p style="font-size: 2rem; margin-bottom: 0.5rem;">📄</p>
+                                <p style="font-size: 0.9rem;">Contenido de la página</p>
+                                <p style="font-size: 0.75rem; margin-top: 1rem;">Navegación abajo ⬇️</p>
+                            </div>
+                        </div>
+                        
+                        <div style="height: 80px;"></div>
+                    </div>
+                    
+                    <!-- BOTTOM NAVIGATION -->
+                    <div class="bottom-nav">
+                        <div class="bottom-nav-item active">
+                            <div class="bottom-nav-icon">🏠</div>
+                            <div>Inicio</div>
+                        </div>
+                        <div class="bottom-nav-item">
+                            <div class="bottom-nav-icon">📚</div>
+                            <div>Biblioteca</div>
+                        </div>
+                        <div class="bottom-nav-item">
+                            <div class="bottom-nav-icon">📁</div>
+                            <div>Carpetas</div>
+                        </div>
+                        <div class="bottom-nav-item">
+                            <div class="bottom-nav-icon">🎸</div>
+                            <div>Live</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- DESKTOP -->
+                <div class="device-mockup desktop-mockup">
+                    <div class="device-label">💻 PC / Desktop</div>
+                    <div class="screen">
+                        <div class="header-example">
+                            <div class="desktop-header">
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <span style="font-size: 2rem;">🎵</span>
+                                    <div>
+                                        <strong style="font-size: 1.2rem;">HolySong</strong>
+                                        <div style="font-size: 0.7rem; color: #94a3b8;">Letras & Acordes en Vivo</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="nav-desktop">
+                                    <div class="nav-button active">🏠 Inicio</div>
+                                    <div class="nav-button">📥 Importar</div>
+                                    <div class="nav-button">📚 Biblioteca</div>
+                                    <div class="nav-button">📁 Carpetas</div>
+                                    <div class="nav-button">🎸 Sesión en vivo</div>
+                                </div>
+                                
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <div style="background: #334155; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.75rem;">👤 usuario@email.com</div>
+                                    <div style="background: #dc2626; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.75rem;">🚪 Cerrar</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="content-example" style="padding: 2rem;">
+                            <div style="text-align: center; padding: 3rem; color: #64748b;">
+                                <p style="font-size: 3rem; margin-bottom: 0.5rem;">📄</p>
+                                <p style="font-size: 1.2rem;">Contenido de la página</p>
+                                <p style="font-size: 0.9rem; margin-top: 1rem;">Navegación arriba ⬆️</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SECCIÓN 2: Layouts de Contenido -->
+        <div class="section">
+            <h2 class="section-title">📐 Layouts de Contenido</h2>
+            <p style="margin-bottom: 2rem;">Cómo se organizan las cards y elementos en cada pantalla.</p>
+            
+            <div class="device-comparison">
+                <!-- MÓVIL - Cards verticales -->
+                <div class="device-mockup mobile-mockup">
+                    <div class="device-label">📱 Móvil - 1 Columna</div>
+                    <div class="screen">
+                        <div class="card-grid mobile-cards">
+                            <div class="card">
+                                <div class="card-icon">📥</div>
+                                <div class="card-title">Importar</div>
+                                <div class="card-description">Subí PDF o imagen</div>
+                            </div>
+                            <div class="card">
+                                <div class="card-icon">📚</div>
+                                <div class="card-title">Biblioteca</div>
+                                <div class="card-description">Todas las canciones</div>
+                            </div>
+                            <div class="card">
+                                <div class="card-icon">📁</div>
+                                <div class="card-title">Carpetas</div>
+                                <div class="card-description">Organizar sets</div>
+                            </div>
+                            <div class="card">
+                                <div class="card-icon">🎸</div>
+                                <div class="card-title">Live</div>
+                                <div class="card-description">Sincronizar equipo</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- DESKTOP - Cards horizontales -->
+                <div class="device-mockup desktop-mockup">
+                    <div class="device-label">💻 PC - 4 Columnas</div>
+                    <div class="screen">
+                        <div class="card-grid desktop-cards">
+                            <div class="card">
+                                <div class="card-icon">📥</div>
+                                <div class="card-title">Importar</div>
+                                <div class="card-description">Subí PDF o imagen con OCR</div>
+                            </div>
+                            <div class="card">
+                                <div class="card-icon">📚</div>
+                                <div class="card-title">Biblioteca</div>
+                                <div class="card-description">Explorá todas las canciones</div>
+                            </div>
+                            <div class="card">
+                                <div class="card-icon">📁</div>
+                                <div class="card-title">Carpetas</div>
+                                <div class="card-description">Organizá tus sets</div>
+                            </div>
+                            <div class="card">
+                                <div class="card-icon">🎸</div>
+                                <div class="card-title">Sesión en vivo</div>
+                                <div class="card-description">Sincronizá con el equipo</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SECCIÓN 3: Características Responsivas -->
+        <div class="section">
+            <h2 class="section-title">✨ Características del Diseño Responsivo</h2>
+            
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Elemento</th>
+                        <th><span class="emoji">📱</span> Móvil</th>
+                        <th><span class="emoji">💻</span> PC/Desktop</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Navegación</strong></td>
+                        <td>Bottom Nav fija (4-5 iconos)</td>
+                        <td>Top Nav horizontal completa</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tamaño de texto</strong></td>
+                        <td>16-18px (legible sin zoom)</td>
+                        <td>14-16px (optimizado)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Botones</strong></td>
+                        <td>44x44px mínimo (táctil)</td>
+                        <td>36x36px (mouse)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cards/Grids</strong></td>
+                        <td>1 columna vertical</td>
+                        <td>2-4 columnas</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Spacing</strong></td>
+                        <td>Amplio (12-20px)</td>
+                        <td>Compacto (8-12px)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Formularios</strong></td>
+                        <td>Campos apilados verticalmente</td>
+                        <td>Campos en filas (2-3 por línea)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SongViewer</strong></td>
+                        <td>Texto 16-18px, scroll vertical</td>
+                        <td>Texto 14-16px, 2 columnas</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Header</strong></td>
+                        <td>Logo + user (compacto)</td>
+                        <td>Logo + Nav + User completo</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <ul class="feature-list">
+                <li class="feature-item">
+                    <strong>📱 Touch-Friendly:</strong> Todos los elementos interactivos tienen mínimo 44x44px para facilitar el toque con el dedo
+                </li>
+                <li class="feature-item">
+                    <strong>📖 Legibilidad:</strong> Tamaños de fuente más grandes en móvil para leer sin hacer zoom
+                </li>
+                <li class="feature-item">
+                    <strong>🎯 Alcance del pulgar:</strong> Bottom navigation ubicada donde es más fácil alcanzar con el pulgar
+                </li>
+                <li class="feature-item">
+                    <strong>🚀 Performance:</strong> Imágenes y efectos optimizados según el tamaño de pantalla
+                </li>
+                <li class="feature-item">
+                    <strong>🎨 Adaptación visual:</strong> Layouts que se reorganizan automáticamente según el espacio disponible
+                </li>
+            </ul>
+        </div>
+        
+        <!-- SECCIÓN 4: Decisión -->
+        <div class="section">
+            <h2 class="section-title">🎯 ¿Qué enfoque preferís?</h2>
+            
+            <div class="decision-box">
+                <div class="decision-title">Elegí cómo querés implementarlo:</div>
+                <p style="margin-bottom: 1rem;">Todas las opciones son funcionales, dependemos de tu preferencia visual</p>
+                
+                <div class="decision-options">
+                    <div class="decision-option">
+                        <div class="option-icon">1️⃣</div>
+                        <div class="option-title">Bottom Navigation</div>
+                        <p style="font-size: 0.85rem; color: #cbd5e1; margin-top: 0.5rem;">
+                            Barra inferior fija en móvil con iconos grandes
+                        </p>
+                        <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">
+                            ✅ Más fácil de alcanzar<br>
+                            ✅ Estándar en apps modernas<br>
+                            ✅ No oculta contenido
+                        </p>
+                    </div>
+                    
+                    <div class="decision-option">
+                        <div class="option-icon">2️⃣</div>
+                        <div class="option-title">Solo Optimizar Actual</div>
+                        <p style="font-size: 0.85rem; color: #cbd5e1; margin-top: 0.5rem;">
+                            Mejorar el header actual para móvil sin cambiar estructura
+                        </p>
+                        <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">
+                            ✅ Menos cambios<br>
+                            ✅ Mantiene diseño actual<br>
+                            ⚠️ Menos espacio en móvil
+                        </p>
+                    </div>
+                    
+                    <div class="decision-option">
+                        <div class="option-icon">3️⃣</div>
+                        <div class="option-title">Menú Hamburguesa</div>
+                        <p style="font-size: 0.85rem; color: #cbd5e1; margin-top: 0.5rem;">
+                            Menú lateral deslizable activado por botón
+                        </p>
+                        <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;">
+                            ✅ Más espacio en pantalla<br>
+                            ⚠️ Requiere un tap extra<br>
+                            ⚠️ Menos descubrible
+                        </p>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 2rem; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                    <p style="font-size: 0.9rem;"><strong>💡 Recomendación:</strong></p>
+                    <p style="font-size: 0.85rem; margin-top: 0.5rem;">
+                        <span class="highlight">Opción 1 - Bottom Navigation</span> es la más moderna y usable para móviles.
+                        Es el estándar en apps como Instagram, YouTube, Spotify, etc.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SECCIÓN 5: Próximos pasos -->
+        <div class="section">
+            <h2 class="section-title">🚀 Próximos Pasos</h2>
+            <p style="margin-bottom: 1.5rem;">Una vez que elijas, implementaré:</p>
+            
+            <ol style="list-style-position: inside; space-y: 1rem;">
+                <li style="padding: 1rem; background: rgba(124, 58, 237, 0.1); border-radius: 8px; margin-bottom: 0.75rem;">
+                    <strong>AppLayout.tsx</strong> - Navegación responsive (bottom nav en móvil, top nav en PC)
+                </li>
+                <li style="padding: 1rem; background: rgba(124, 58, 237, 0.1); border-radius: 8px; margin-bottom: 0.75rem;">
+                    <strong>HomePage.tsx</strong> - Cards en 1 col (móvil) vs 4 cols (PC)
+                </li>
+                <li style="padding: 1rem; background: rgba(124, 58, 237, 0.1); border-radius: 8px; margin-bottom: 0.75rem;">
+                    <strong>LibraryPage.tsx</strong> - Lista optimizada, textos más grandes en móvil
+                </li>
+                <li style="padding: 1rem; background: rgba(124, 58, 237, 0.1); border-radius: 8px; margin-bottom: 0.75rem;">
+                    <strong>SongViewer/Editor</strong> - Tamaño de texto adaptativo para acordes/letras
+                </li>
+                <li style="padding: 1rem; background: rgba(124, 58, 237, 0.1); border-radius: 8px; margin-bottom: 0.75rem;">
+                    <strong>Todos los botones</strong> - Tamaño mínimo 44x44px en móvil
+                </li>
+            </ol>
+            
+            <div style="margin-top: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-radius: 12px; text-align: center;">
+                <p style="font-size: 1.2rem; font-weight: bold; margin-bottom: 0.5rem;">✨ Respondeme con el número (1, 2 o 3)</p>
+                <p style="font-size: 0.9rem;">Y empiezo a implementar el diseño completo</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

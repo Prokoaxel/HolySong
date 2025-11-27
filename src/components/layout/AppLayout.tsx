@@ -185,56 +185,56 @@ const AppLayout: React.FC = () => {
         </main>
 
         {/* BOTTOM NAVIGATION - Solo visible en móvil */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t-2 border-purple-500/30 bg-gradient-to-r from-slate-950 via-purple-950/20 to-slate-950 backdrop-blur-xl shadow-[0_-4px_20px_rgba(124,58,237,0.3)]">
-          <div className="flex justify-around items-center px-2 py-2">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t-4 border-teal-500/60 bg-gradient-to-r from-slate-950 via-purple-950/40 to-slate-950 backdrop-blur-xl shadow-[0_-8px_30px_rgba(20,184,166,0.4)]">
+          <div className="flex justify-around items-center px-1 py-3">
             <NavLink to="/app" end className={({ isActive }) =>
-              'flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all active:scale-95 ' +
+              'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all active:scale-95 min-w-[64px] ' +
               (isActive
-                ? 'bg-gradient-to-br from-teal-600/30 to-teal-700/20 text-teal-300'
+                ? 'bg-gradient-to-br from-teal-600/40 to-teal-700/30 text-teal-200 shadow-lg shadow-teal-500/30'
                 : 'text-slate-400 hover:text-slate-200')
             }>
-              <span className="text-2xl">🏠</span>
-              <span className="text-[10px] font-bold">Inicio</span>
+              <span className="text-3xl">🏠</span>
+              <span className="text-[9px] font-bold">Inicio</span>
             </NavLink>
             
             <NavLink to="/app/import" className={({ isActive }) =>
-              'flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all active:scale-95 ' +
+              'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all active:scale-95 min-w-[64px] ' +
               (isActive
-                ? 'bg-gradient-to-br from-purple-600/30 to-purple-700/20 text-purple-300'
+                ? 'bg-gradient-to-br from-purple-600/40 to-purple-700/30 text-purple-200 shadow-lg shadow-purple-500/30'
                 : 'text-slate-400 hover:text-slate-200')
             }>
-              <span className="text-2xl">📥</span>
-              <span className="text-[10px] font-bold">Importar</span>
+              <span className="text-3xl">📥</span>
+              <span className="text-[9px] font-bold">Importar</span>
             </NavLink>
             
             <NavLink to="/app/library" className={({ isActive }) =>
-              'flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all active:scale-95 ' +
+              'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all active:scale-95 min-w-[64px] ' +
               (isActive
-                ? 'bg-gradient-to-br from-teal-600/30 to-teal-700/20 text-teal-300'
+                ? 'bg-gradient-to-br from-teal-600/40 to-teal-700/30 text-teal-200 shadow-lg shadow-teal-500/30'
                 : 'text-slate-400 hover:text-slate-200')
             }>
-              <span className="text-2xl">📚</span>
-              <span className="text-[10px] font-bold">Biblioteca</span>
+              <span className="text-3xl">📚</span>
+              <span className="text-[9px] font-bold">Biblioteca</span>
             </NavLink>
             
             <NavLink to="/app/folders" className={({ isActive }) =>
-              'flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all active:scale-95 ' +
+              'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all active:scale-95 min-w-[64px] ' +
               (isActive
-                ? 'bg-gradient-to-br from-pink-600/30 to-pink-700/20 text-pink-300'
+                ? 'bg-gradient-to-br from-pink-600/40 to-pink-700/30 text-pink-200 shadow-lg shadow-pink-500/30'
                 : 'text-slate-400 hover:text-slate-200')
             }>
-              <span className="text-2xl">📁</span>
-              <span className="text-[10px] font-bold">Carpetas</span>
+              <span className="text-3xl">📁</span>
+              <span className="text-[9px] font-bold">Carpetas</span>
             </NavLink>
             
             <NavLink to="/app/live" className={({ isActive }) =>
-              'flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all active:scale-95 ' +
+              'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all active:scale-95 min-w-[64px] ' +
               (isActive
-                ? 'bg-gradient-to-br from-purple-600/30 to-purple-700/20 text-purple-300'
+                ? 'bg-gradient-to-br from-purple-600/40 to-purple-700/30 text-purple-200 shadow-lg shadow-purple-500/30'
                 : 'text-slate-400 hover:text-slate-200')
             }>
-              <span className="text-2xl">🎸</span>
-              <span className="text-[10px] font-bold">Live</span>
+              <span className="text-3xl">🎸</span>
+              <span className="text-[9px] font-bold">Live</span>
             </NavLink>
           </div>
         </nav>
