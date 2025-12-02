@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../hooks/useAuth'
 import SongViewer from '../components/songs/SongViewerFixed'
@@ -35,11 +36,45 @@ const LiveSessionPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [allSongs, setAllSongs] = useState<Song[]>([])
   const [filteredSongs, setFilteredSongs] = useState<Song[]>([])
+  const [controlPanelOpen, setControlPanelOpen] = useState(false)
+  
+  // Estados para swipe
+  const [touchStart, setTouchStart] = useState<number | null>(null)
+  const [touchEnd, setTouchEnd] = useState<number | null>(null)
 
   const channelRef = useRef<any>(null)
   const pollingIntervalRef = useRef<any>(null)
 
   const isAdmin = role === 'admin'
+
+  // Constantes para swipe
+  const minSwipeDistance = 50
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null)
+    setTouchStart(e.targetTouches[0].clientX)
+  }
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+  }
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return
+    
+    const distance = touchStart - touchEnd
+    const isLeftSwipe = distance > minSwipeDistance
+    const isRightSwipe = distance < -minSwipeDistance
+    
+    if (isLeftSwipe && isAdmin) {
+      // Swipe izquierda = siguiente
+      goToNextSong()
+    }
+    if (isRightSwipe && isAdmin) {
+      // Swipe derecha = anterior
+      goToPrevSong()
+    }
+  }
 
   // Cargar todas las canciones para el buscador
   const loadAllSongs = async () => {
@@ -461,65 +496,42 @@ const LiveSessionPage: React.FC = () => {
   // UI dentro de la sesión
   return (
     <div className="space-y-3 sm:space-y-6 animate-[fadeIn_400ms_ease]">
-      {/* Header sesión */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-teal-900/30 via-purple-900/30 to-pink-900/30 border border-teal-500/40">
-        <div className="space-y-1.5 sm:space-y-2">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <span className="text-xl sm:text-2xl animate-pulse">🔴</span>
-            <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-teal-300">
-              Sesión en vivo
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
-            <button
-              onClick={copyCode}
-              className="group px-3 py-1.5 rounded-lg bg-gradient-to-r from-teal-500 to-teal-600 border-2 border-teal-400 shadow-lg shadow-teal-500/50 hover:from-teal-400 hover:to-teal-500 hover:scale-105 transition-all duration-200 cursor-pointer relative"
-              title="Clic para copiar"
-            >
-              <p className="text-xs font-mono font-bold text-white tracking-widest flex items-center gap-2">
-                {session.code}
-                <span className="text-sm">{copied ? '✅' : '📋'}</span>
-              </p>
-              {copied && (
-                <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-teal-300 bg-slate-900 px-2 py-1 rounded whitespace-nowrap animate-[fadeIn_200ms_ease]">
-                  ¡Copiado!
-                </span>
-              )}
-            </button>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xl">{isAdmin ? '👨‍💼' : '👥'}</span>
-              <h1 className="text-lg font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
-                {isAdmin ? 'Panel del administrador' : 'Modo oyente'}
-              </h1>
-            </div>
-          </div>
-          <p className="text-xs text-slate-300">
-            📤 Compartí este código con tu equipo para que se conecten a esta sesión.
-          </p>
-        </div>
-
-        <div className="flex flex-col items-end gap-2">
-          <div className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-700">
-            <p className="text-xs">
-              <span className="text-slate-400">Rol:</span>{' '}
-              <span className="font-bold text-teal-300">
-                {isAdmin ? 'Administrador' : 'Oyente'}
-              </span>
-            </p>
-          </div>
+      {/* Header sesión - compacto */}
+      <div className="flex items-center justify-between gap-3 p-2 sm:p-3 rounded-lg bg-slate-900/80 border border-teal-500/40">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <span className="text-sm sm:text-base animate-pulse">🔴</span>
           <button
-            onClick={leaveSession}
-            className="rounded-xl border-2 border-red-500/40 bg-gradient-to-r from-red-900/20 to-red-800/20 px-4 py-2 text-xs font-semibold text-red-300 hover:border-red-400 hover:text-red-200 hover:from-red-800/40 hover:to-red-700/40 transition-all duration-300 hover:scale-105 flex items-center gap-2"
+            onClick={copyCode}
+            className="px-2 sm:px-3 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 transition-all relative"
+            title="Copiar código"
           >
-            <span className="text-sm">🚪</span>
-            Salir de la sala
+            <p className="text-[10px] sm:text-xs font-mono font-bold text-white tracking-wider">
+              {session.code}
+            </p>
+            {copied && (
+              <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] font-semibold text-teal-300 bg-slate-900 px-2 py-0.5 rounded whitespace-nowrap">
+                ¡Copiado!
+              </span>
+            )}
           </button>
+          <div className="px-2 sm:px-3 py-1 rounded-lg bg-slate-800 border border-slate-700">
+            <p className="text-[10px] sm:text-xs font-bold text-teal-300">
+              {isAdmin ? '👨‍💼 Admin' : '👥 Oyente'}
+            </p>
+          </div>
         </div>
+        <button
+          onClick={leaveSession}
+          className="px-2 sm:px-3 py-1 rounded-lg bg-red-900/40 hover:bg-red-800/60 border border-red-500/40 transition-all flex items-center gap-1"
+        >
+          <span className="text-xs sm:text-sm">🚪</span>
+          <span className="hidden sm:inline text-[10px] sm:text-xs font-semibold text-red-300">Salir</span>
+        </button>
       </div>
 
-      <div className="grid gap-3 sm:gap-6 md:grid-cols-[280px,minmax(0,1fr)]">
-        {/* Panel de control */}
-        <div className="rounded-xl sm:rounded-2xl border border-purple-500/40 bg-gradient-to-br from-purple-900/20 via-slate-950/80 to-slate-950/80 p-3 sm:p-5 space-y-3 sm:space-y-5 text-xs shadow-[0_0_30px_rgba(168,85,247,0.2)]">
+      <div className="grid gap-0 md:gap-6 grid-cols-1 md:grid-cols-[280px,minmax(0,1fr)]">
+        {/* Panel de control - solo desktop */}
+        <div className="hidden md:block rounded-xl sm:rounded-2xl border border-purple-500/40 bg-gradient-to-br from-purple-900/20 via-slate-950/80 to-slate-950/80 p-3 sm:p-5 space-y-3 sm:space-y-5 text-xs shadow-[0_0_30px_rgba(168,85,247,0.2)]">
           <div>
             <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
               <span className="text-base sm:text-lg">🎵</span>
@@ -706,15 +718,22 @@ const LiveSessionPage: React.FC = () => {
         </div>
 
         {/* Visor compartido */}
-        <div className="rounded-xl sm:rounded-2xl border border-teal-500/40 bg-gradient-to-br from-slate-950/80 via-teal-950/20 to-slate-950/80 p-3 sm:p-6 shadow-[0_0_30px_rgba(20,184,166,0.2)]">
+        <div 
+          className="relative p-0 md:p-6 md:rounded-2xl md:border md:border-teal-500/40 md:bg-gradient-to-br md:from-slate-950/80 md:via-teal-950/20 md:to-slate-950/80 md:shadow-[0_0_30px_rgba(20,184,166,0.2)]"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           {currentSong ? (
-            <SongViewer
-              title={currentSong.title}
-              tone={currentSong.tone || ''}
-              content={currentSong.content || ''}
-              externalTranspose={session.transpose + (currentSong.transposeCustom || 0)}
-              externalCapo={session.capo}
-            />
+            <>
+              <SongViewer
+                title={currentSong.title}
+                tone={currentSong.tone || ''}
+                content={currentSong.content || ''}
+                externalTranspose={session.transpose + (currentSong.transposeCustom || 0)}
+                externalCapo={session.capo}
+              />
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 py-12 sm:py-20 text-center">
               <div className="text-4xl sm:text-6xl opacity-30">🎵</div>
@@ -726,6 +745,184 @@ const LiveSessionPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Botones de navegación fijos en pantalla (solo admin) via Portal */}
+      {isAdmin && currentSong && songs.length > 1 && createPortal(
+        <div className="fixed inset-0 z-[100] pointer-events-none">
+          <button
+            onClick={goToPrevSong}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-24 rounded-full bg-slate-900/40 hover:bg-slate-800/60 border border-slate-700/50 flex items-center justify-center opacity-20 hover:opacity-100 transition-all pointer-events-auto"
+            aria-label="Canción anterior"
+          >
+            <span className="text-slate-300 text-sm">←</span>
+          </button>
+          <button
+            onClick={goToNextSong}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-24 rounded-full bg-slate-900/40 hover:bg-slate-800/60 border border-slate-700/50 flex items-center justify-center opacity-20 hover:opacity-100 transition-all pointer-events-auto"
+            aria-label="Canción siguiente"
+          >
+            <span className="text-slate-300 text-sm">→</span>
+          </button>
+        </div>,
+        document.body
+      )}
+
+      {/* Botón flotante para abrir panel de control (mobile) via Portal */}
+      {createPortal(
+        <button
+          onClick={() => setControlPanelOpen(true)}
+          className="md:hidden fixed bottom-28 right-4 w-12 h-12 rounded-full bg-purple-600 hover:bg-purple-500 shadow-lg flex items-center justify-center z-[120] transition-all"
+          aria-label="Abrir panel de control"
+        >
+          <span className="text-xl">🎵</span>
+        </button>,
+        document.body
+      )}
+
+      {/* Modal del panel de control (mobile) */}
+      {controlPanelOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setControlPanelOpen(false)} />
+          <div className="relative mx-auto mt-20 w-[92%] max-w-md max-h-[78vh] overflow-auto rounded-2xl bg-gradient-to-br from-purple-900/20 via-slate-950/80 to-slate-950/80 border-2 border-purple-500/40 p-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>🎵</span>
+                Canción actual
+              </h2>
+              <button onClick={() => setControlPanelOpen(false)} className="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-all">✕</button>
+            </div>
+            
+            {isAdmin ? (
+              <div className="space-y-3">
+                {/* Carpeta */}
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 mb-1.5">
+                    <span>📁</span>
+                    Carpeta
+                  </label>
+                  <select
+                    value={selectedFolderId}
+                    onChange={e => {
+                      const id = e.target.value
+                      setSelectedFolderId(id)
+                      loadSongsForFolder(id || undefined)
+                    }}
+                    className="w-full rounded-lg bg-slate-900/80 border border-purple-500/30 px-3 py-2 text-xs font-medium focus:border-purple-400/60 focus:ring-2 focus:ring-purple-500/30 transition-all"
+                  >
+                    <option value="">📁 Todas</option>
+                    {folders.map(f => (
+                      <option key={f.id} value={f.id}>
+                        📂 {f.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Canción */}
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 mb-1.5">
+                    <span>🎼</span>
+                    Canción
+                  </label>
+                  <select
+                    value={currentSong?.id || ''}
+                    onChange={e => {
+                      const songId = e.target.value || null
+                      updateSession({ current_song: songId as any })
+                    }}
+                    className="w-full rounded-lg bg-slate-900/80 border border-purple-500/30 px-3 py-2 text-xs font-medium focus:border-purple-400/60 focus:ring-2 focus:ring-purple-500/30 transition-all"
+                  >
+                    <option value="">🚫 Ninguna</option>
+                    {songs.map(s => (
+                      <option key={s.id} value={s.id}>
+                        🎵 {s.title}{s.transposeCustom ? ` (${s.transposeCustom > 0 ? '+' : ''}${s.transposeCustom})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Navegación */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={goToPrevSong}
+                    className="flex-1 rounded-lg bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 py-2 text-xs font-semibold transition-all border border-slate-600 flex items-center justify-center gap-1"
+                  >
+                    <span>⬅️</span>
+                    Anterior
+                  </button>
+                  <button
+                    onClick={goToNextSong}
+                    className="flex-1 rounded-lg bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 py-2 text-xs font-semibold transition-all border border-slate-600 flex items-center justify-center gap-1"
+                  >
+                    Siguiente
+                    <span>➡️</span>
+                  </button>
+                </div>
+
+                {/* Agregar canción */}
+                <button
+                  onClick={() => {
+                    setControlPanelOpen(false)
+                    setShowAddSongModal(true)
+                  }}
+                  className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 py-3 text-sm font-bold transition-all shadow-lg flex items-center justify-center gap-2"
+                >
+                  <span>➕</span>
+                  Agregar canción
+                </button>
+
+                {/* Tono */}
+                <div className="pt-3 border-t border-slate-700">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 mb-2">
+                    <span>🎸</span>
+                    Tono
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => updateSession({ transpose: (session.transpose || 0) - 1 })}
+                      className="flex-1 rounded-lg bg-slate-800 hover:bg-slate-700 py-2 text-xs font-semibold transition-all border border-slate-600"
+                    >
+                      -½
+                    </button>
+                    <div className="flex-1 rounded-lg bg-slate-900/80 border border-purple-500/30 flex items-center justify-center">
+                      <span className="text-sm font-bold text-teal-300">{session.transpose || 0}</span>
+                    </div>
+                    <button
+                      onClick={() => updateSession({ transpose: (session.transpose || 0) + 1 })}
+                      className="flex-1 rounded-lg bg-slate-800 hover:bg-slate-700 py-2 text-xs font-semibold transition-all border border-slate-600"
+                    >
+                      +½
+                    </button>
+                  </div>
+                </div>
+
+                {/* Capo */}
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 mb-2">
+                    <span>🎸</span>
+                    Capo
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="12"
+                    value={session.capo || 0}
+                    onChange={e => updateSession({ capo: parseInt(e.target.value) })}
+                    className="w-full accent-purple-500"
+                  />
+                  <div className="text-center text-xs text-slate-400 mt-1">Traste {session.capo || 0}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6 space-y-3">
+                <div className="text-4xl">👥</div>
+                <p className="text-sm text-slate-300">Modo oyente</p>
+                <p className="text-xs text-slate-400">El administrador controla la sesión</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Modal para buscar y agregar canciones */}
       {showAddSongModal && (

@@ -427,12 +427,12 @@ const SongViewerFixed: React.FC<SongViewerProps> = ({
     )
   }
   return (
-    <div className="pt-0 px-1 pb-1 text-slate-200">
+    <div className="pt-0 px-0 md:px-1 pb-0 md:pb-1 text-slate-200 h-full">
       {/* Contenedor centrado */}
-      <div className="max-w-3xl mx-auto">
-        <div className="rounded-md border border-slate-700 bg-slate-900/60 p-4 relative">
-          <h1 className="text-lg font-semibold mb-1">{title}</h1>
-          <p className="text-[12px] text-slate-400 mb-3">Tono: {tone}</p>
+      <div className="md:max-w-3xl md:mx-auto h-full">
+        <div className="md:rounded-md md:border md:border-slate-700 md:bg-slate-900/60 p-3 md:p-4 relative h-full">
+          <h1 className="text-base md:text-lg font-semibold mb-1">{title}</h1>
+          <p className="text-[11px] md:text-[12px] text-slate-400 mb-2 md:mb-3">Tono: {tone}</p>
           
           {/* Indicador de modo comentario con animación mejorada */}
           {commentMode && (

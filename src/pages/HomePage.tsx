@@ -81,7 +81,8 @@ const HomePage: React.FC = () => {
             🎸 Buscá canciones • 📁 Armá carpetas por servicio • 🎚️ Sincronizá al equipo en tiempo real
           </p>
           
-          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 pt-2">
+          {/* Botones principales: ocultos en móvil para no duplicar con la bottom nav */}
+          <div className="hidden md:flex md:flex-row md:items-center gap-3 pt-2">
             <button
               onClick={() => navigate('/app/library')}
               className="group relative w-full md:w-auto px-6 py-3.5 md:py-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-base md:text-sm font-bold transition-all hover:scale-105 active:scale-95 border-2 border-purple-400/60 shadow-lg shadow-purple-500/30 overflow-hidden"
@@ -175,8 +176,8 @@ const HomePage: React.FC = () => {
           )}
         </div>
 
-        {/* TARJETAS PRINCIPALES */}
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+        {/* TARJETAS PRINCIPALES - Ocultas en móvil para no duplicar con la bottom nav */}
+        <div className="hidden md:grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
           {/* Importar */}
           <button
             onClick={() => navigate('/app/import')}

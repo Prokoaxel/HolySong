@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabaseClient'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
@@ -17,6 +18,10 @@ const FolderDetailPage: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState<number | null>(null)
   const [editingTranspose, setEditingTranspose] = useState<string | null>(null)
   const [tempTranspose, setTempTranspose] = useState<number>(0)
+  // Swipe state
+  const [touchStart, setTouchStart] = useState<number | null>(null)
+  const [touchEnd, setTouchEnd] = useState<number | null>(null)
+  const minSwipeDistance = 50
 
   useEffect(() => {
     const load = async () => {
@@ -45,6 +50,28 @@ const FolderDetailPage: React.FC = () => {
     }
     load()
   }, [id, user])
+
+  // Swipe handlers (derecha = siguiente, izquierda = anterior)
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null)
+    setTouchStart(e.targetTouches[0].clientX)
+  }
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+  }
+
+  const onTouchEnd = () => {
+    if (touchStart === null || touchEnd === null) return
+    const distance = touchEnd - touchStart
+    if (distance > minSwipeDistance) {
+      // swipe derecha -> siguiente
+      goNextInFolder()
+    } else if (distance < -minSwipeDistance) {
+      // swipe izquierda -> anterior
+      goPrevInFolder()
+    }
+  }
 
   // add a song by id to the current folder
   const addToFolder = async (songId: string) => {
@@ -176,7 +203,12 @@ const FolderDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-3 sm:space-y-6 max-w-5xl mx-auto py-2 sm:py-4">
+    <div
+      className="space-y-3 sm:space-y-6 max-w-5xl mx-auto py-2 sm:py-4"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       {/* Header mejorado */}
       <div className="relative rounded-lg sm:rounded-xl bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900 border border-purple-400/40 sm:border-2 p-3 sm:p-5 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-purple-500/10 to-pink-500/5 animate-[shimmer_3s_ease-in-out_infinite]" />
@@ -316,11 +348,24 @@ const FolderDetailPage: React.FC = () => {
                 key={s.id}
                 style={{ animationDelay: `${idx * 30}ms` }}
                 className={
-                  'rounded-lg px-2 sm:px-4 py-2 sm:py-3 transition-all flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 animate-[fadeIn_300ms_ease] ' +
+                  'rounded-lg px-2 sm:px-4 py-2 sm:py-3 transition-all flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 animate-[fadeIn_300ms_ease] cursor-pointer ' +
                   (isActive
                     ? 'bg-gradient-to-r from-teal-900/40 to-teal-800/40 ring-1 sm:ring-2 ring-teal-400 shadow-lg shadow-teal-500/20'
                     : 'bg-slate-900/60 border border-slate-700 hover:border-purple-500/50')
                 }
+                onClick={() => {
+                  setCurrentIndex(origIdx === -1 ? null : origIdx)
+                  navigate(`/app/song/${s.id}?folderId=${id}`)
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setCurrentIndex(origIdx === -1 ? null : origIdx)
+                    navigate(`/app/song/${s.id}?folderId=${id}`)
+                  }
+                }}
               >
                   <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                     <div className={
@@ -358,7 +403,7 @@ const FolderDetailPage: React.FC = () => {
                     {isEditing ? (
                       <div className="flex items-center gap-1 sm:gap-2 bg-gradient-to-r from-slate-900 to-slate-800 rounded-lg sm:rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 border border-purple-500/50 sm:border-2 shadow-lg shadow-purple-500/20 animate-[fadeIn_200ms_ease] w-full sm:w-auto">
                         <button
-                          onClick={() => setTempTranspose(prev => prev - 1)}
+                          onClick={(e) => { e.stopPropagation(); setTempTranspose(prev => prev - 1) }}
                           className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-xs sm:text-sm font-bold transition-all hover:scale-110 active:scale-95 shadow-md flex items-center justify-center"
                         >
                           <span className="text-white">−</span>
@@ -375,21 +420,22 @@ const FolderDetailPage: React.FC = () => {
                           )}
                         </div>
                         <button
-                          onClick={() => setTempTranspose(prev => prev + 1)}
+                          onClick={(e) => { e.stopPropagation(); setTempTranspose(prev => prev + 1) }}
                           className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-xs sm:text-sm font-bold transition-all hover:scale-110 active:scale-95 shadow-md flex items-center justify-center"
                         >
                           <span className="text-white">+</span>
                         </button>
                         <div className="w-px h-6 sm:h-8 bg-slate-700 mx-0.5 sm:mx-1"></div>
                         <button
-                          onClick={() => setTempTranspose(0)}
+                          onClick={(e) => { e.stopPropagation(); setTempTranspose(0) }}
                           className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-700 hover:bg-slate-600 text-[10px] sm:text-xs font-bold transition-all hover:scale-110 active:scale-95"
                           title="Resetear a original"
                         >
                           0
                         </button>
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             updateCustomTranspose(s.id, tempTranspose)
                           }}
                           className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-xs sm:text-sm transition-all hover:scale-110 active:scale-95 shadow-md flex items-center justify-center"
@@ -399,7 +445,8 @@ const FolderDetailPage: React.FC = () => {
                       </div>
                     ) : (
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setEditingTranspose(s.id)
                           setTempTranspose(customTranspose)
                         }}
@@ -412,7 +459,8 @@ const FolderDetailPage: React.FC = () => {
                     )}
                     
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setCurrentIndex(origIdx === -1 ? null : origIdx)
                         navigate(`/app/song/${s.id}?folderId=${id}`)
                       }}
@@ -422,7 +470,7 @@ const FolderDetailPage: React.FC = () => {
                       <span className="hidden sm:inline">Abrir</span>
                     </button>
                     <button
-                      onClick={() => removeFromFolder(s.id)}
+                      onClick={(e) => { e.stopPropagation(); removeFromFolder(s.id) }}
                       className="rounded-lg sm:rounded-xl px-2 sm:px-3 py-1 sm:py-2 text-[10px] sm:text-xs font-bold transition-all hover:scale-110 active:scale-95 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 border border-red-400/60 sm:border-2 shadow-lg flex items-center gap-1 sm:gap-1.5"
                     >
                       <span>🗑️</span>
@@ -435,6 +483,27 @@ const FolderDetailPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Flechas fijas tipo overlay (aparecen si hay canciones) */}
+      {songs.length > 1 && currentIndex !== null && createPortal(
+        <div className="fixed inset-0 z-[120] pointer-events-none">
+          <button
+            onClick={goPrevInFolder}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-24 rounded-full bg-slate-900/40 hover:bg-slate-800/60 border border-slate-700/50 flex items-center justify-center opacity-20 hover:opacity-100 transition-all pointer-events-auto"
+            aria-label="Anterior"
+          >
+            <span className="text-slate-300 text-sm">←</span>
+          </button>
+          <button
+            onClick={goNextInFolder}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-24 rounded-full bg-slate-900/40 hover:bg-slate-800/60 border border-slate-700/50 flex items-center justify-center opacity-20 hover:opacity-100 transition-all pointer-events-auto"
+            aria-label="Siguiente"
+          >
+            <span className="text-slate-300 text-sm">→</span>
+          </button>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }

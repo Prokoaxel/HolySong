@@ -145,36 +145,29 @@ const AppLayout: React.FC = () => {
           </div>
         </header>
 
-        {/* MOBILE HEADER - Solo visible en móvil */}
+        {/* MOBILE HEADER - Solo nombre de app, email y salir (más prolijo) */}
         <header id="mobile-header" className="mobile-header sticky top-0 z-40 border-b-2 border-purple-500/30 bg-gradient-to-r from-slate-950 via-purple-950/20 to-slate-950 backdrop-blur-xl shadow-xl shadow-purple-500/10">
-          <div className="flex items-center justify-between px-3 py-2.5">
-            {location.pathname !== '/app' && (
-              <button
-                onClick={handleBack}
-                className="group relative px-2.5 py-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-700 hover:border-purple-500/50 text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-lg flex items-center gap-1"
-              >
-                <span className="group-hover:-translate-x-1 transition-transform">←</span>
-              </button>
-            )}
-            
-            <div className="flex items-center gap-2 flex-1 justify-center">
-              <img 
-                src="/brand/note.svg" 
-                alt="HolySong" 
-                className="w-7 h-7 filter brightness-0 invert" 
-              />
-              <div className="flex flex-col items-center">
-                <p className="text-base font-black bg-gradient-to-r from-purple-300 via-pink-300 to-teal-300 bg-clip-text text-transparent">
+          <div className="relative flex items-start px-2 pr-12 py-3">
+            <div className="min-w-0 flex flex-col gap-0.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <img src="/brand/note.svg" alt="HolySong" className="w-6 h-6 filter brightness-0 invert" />
+                <p className="text-base leading-tight font-black bg-gradient-to-r from-purple-300 via-pink-300 to-teal-300 bg-clip-text text-transparent">
                   HolySong
                 </p>
-                <span className="text-[8px] text-teal-400 font-bold">📱 v1.2.0 MÓVIL</span>
               </div>
+              {user && (
+                <p className="text-[11px] leading-tight text-slate-300 truncate max-w-[240px]">
+                  {user.email}
+                </p>
+              )}
             </div>
-            
             {user && (
               <button
                 onClick={signOut}
-                className="relative px-2.5 py-2 rounded-lg bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-xs font-black transition-all hover:scale-110 active:scale-95 border border-red-400/50 shadow-lg shadow-red-500/20"
+                className="absolute right-0 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-[12px] font-bold border border-red-400/50 shadow-md shadow-red-500/20"
+                style={{ right: 'env(safe-area-inset-right)' }}
+                aria-label="Cerrar sesión"
+                title="Cerrar sesión"
               >
                 🚪
               </button>
@@ -183,7 +176,7 @@ const AppLayout: React.FC = () => {
         </header>
 
         {/* CONTENIDO */}
-        <main className="flex-1 px-3 sm:px-4 md:px-8 py-4 md:py-6 fade-in">
+        <main className="flex-1 min-h-0 overflow-hidden px-3 sm:px-4 md:px-8 py-4 pb-28 md:pb-6 md:py-6 fade-in">
           <Outlet />
         </main>
 

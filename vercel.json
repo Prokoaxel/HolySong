@@ -4,6 +4,14 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/mobile-v1",
+      "destination": "/mobile-v1.html"
+    },
+    {
+      "source": "/mobile-v1.html",
+      "destination": "/mobile-v1.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

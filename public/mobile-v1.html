@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HolySong Mobile v1</title>
+    <meta name="theme-color" content="#1e293b" />
+    <style>
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+          Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        color: #e2e8f0;
+      }
+      .app {
+        min-height: 100dvh;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        padding: .75rem 1rem;
+        background: linear-gradient(to right, #1e1b4b, #581c87);
+        border-bottom: 2px solid #7c3aed;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        font-weight: 700;
+      }
+      .brand .logo { font-size: 1.25rem; }
+      .actions { display: flex; gap: .5rem; }
+      .chip {
+        background: #334155;
+        border: 1px solid #475569;
+        color: #cbd5e1;
+        padding: .35rem .6rem;
+        border-radius: 8px;
+        font-size: .75rem;
+      }
+
+      .content {
+        position: relative;
+        overflow: hidden;
+      }
+      .frame {
+        width: 100%;
+        height: calc(100dvh - 64px - 68px); /* topbar + bottom nav aprox */
+        border: 0;
+        display: block;
+        background: #0f172a;
+      }
+
+      .bottom-nav {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #1e293b;
+        border-top: 2px solid #7c3aed;
+        padding: .5rem .25rem calc(max(.5rem, env(safe-area-inset-bottom)));
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: .25rem;
+        box-shadow: 0 -4px 20px rgba(124,58,237,.3);
+      }
+      .nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: .2rem;
+        padding: .4rem .25rem;
+        border-radius: 10px;
+        color: #94a3b8;
+        font-size: .7rem;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        transition: background .15s, color .15s, transform .1s;
+      }
+      .nav-item:active { transform: scale(.98); }
+      .nav-item .ico { font-size: 1.25rem; line-height: 1; }
+      .nav-item.active { background: rgba(124,58,237,.22); color: #c084fc; }
+
+      @media (min-width: 768px) {
+        /* Permite previsualizar también en desktop */
+        .app { max-width: 420px; margin: 0 auto; border-left: 1px solid #334155; border-right: 1px solid #334155; }
+        .frame { height: calc(100dvh - 64px - 72px); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand"><span class="logo">🎵</span> HolySong</div>
+        <div class="actions">
+          <a class="chip" href="/login" target="_blank" rel="noopener">👤</a>
+          <a class="chip" href="/app" target="_blank" rel="noopener">Abrir app</a>
+        </div>
+      </header>
+
+      <main class="content">
+        <iframe id="app-frame" class="frame" src="/app" title="HolySong App"></iframe>
+      </main>
+
+      <nav class="bottom-nav" role="navigation" aria-label="Navegación inferior">
+        <button class="nav-item active" data-path="/app">
+          <div class="ico">🏠</div>
+          <div>Inicio</div>
+        </button>
+        <button class="nav-item" data-path="/app/import">
+          <div class="ico">📥</div>
+          <div>Importar</div>
+        </button>
+        <button class="nav-item" data-path="/app/library">
+          <div class="ico">📚</div>
+          <div>Biblioteca</div>
+        </button>
+        <button class="nav-item" data-path="/app/folders">
+          <div class="ico">📁</div>
+          <div>Carpetas</div>
+        </button>
+        <button class="nav-item" data-path="/app/live">
+          <div class="ico">🎸</div>
+          <div>Live</div>
+        </button>
+      </nav>
+    </div>
+
+    <script>
+      (function () {
+        const frame = document.getElementById('app-frame');
+        const items = Array.from(document.querySelectorAll('.nav-item'));
+        const topbar = document.querySelector('.topbar');
+        const bottomNav = document.querySelector('.bottom-nav');
+
+        function setActive(path) {
+          items.forEach(btn => {
+            const active = btn.getAttribute('data-path') === path;
+            btn.classList.toggle('active', active);
+          });
+        }
+
+        function setFrameHeight() {
+          const vh = window.innerHeight;
+          const topH = topbar ? topbar.getBoundingClientRect().height : 0;
+          const bottomH = bottomNav ? bottomNav.getBoundingClientRect().height : 0;
+          const h = Math.max(200, vh - topH - bottomH);
+          if (frame) frame.style.height = h + 'px';
+        }
+
+        window.addEventListener('resize', setFrameHeight);
+        window.addEventListener('orientationchange', setFrameHeight);
+        setFrameHeight();
+
+        items.forEach(btn => {
+          btn.addEventListener('click', () => {
+            const path = btn.getAttribute('data-path');
+            if (!path) return;
+            if (frame && frame.contentWindow) {
+              frame.src = path; // navegación simple
+              setActive(path);
+              history.replaceState(null, '', `?to=${encodeURIComponent(path)}`);
+            }
+          });
+        });
+
+        // Inicializar según query (?to=/app/library)
+        const params = new URLSearchParams(location.search);
+        const to = params.get('to');
+        if (to && typeof to === 'string') {
+          frame.src = to;
+          setActive(to);
+        }
+
+        // Actualizar activo al cambiar ruta dentro del iframe (misma-origin)
+        frame.addEventListener('load', () => {
+          try {
+            const path = new URL(frame.contentWindow.location.href).pathname;
+            setActive(path);
+            // Aplicar tweaks móviles dentro del iframe
+            applyMobileTweaks(frame.contentDocument, path);
+          } catch (_) {
+            // Ignorar si no es same-origin
+          }
+        });
+
+        function applyMobileTweaks(doc, path) {
+          if (!doc) return;
+          // Inyectar estilos base (una vez)
+          if (!doc.getElementById('hs-mobile-v1-styles')) {
+            const style = doc.createElement('style');
+            style.id = 'hs-mobile-v1-styles';
+            style.textContent = `
+              /* Ocultar íconos grandes de tarjetas en Home (solo móvil v1) */
+              .hs-mobile-v1 .grid button .w-14.h-14 { display: none !important; }
+              /* Ajustar espacios donde se ocultaron íconos */
+              .hs-mobile-v1 .grid button .relative.space-y-4 > .flex.items-center.gap-3 { gap: .5rem !important; }
+              .hs-mobile-v1 .grid button .relative.space-y-4 { padding-top: .25rem; }
+              /* Forzar viewer a ocupar toda la altura disponible */
+              .hs-mobile-v1 .song-fullscreen { height: calc(100dvh - 8px) !important; }
+              /* Ocultar posibles barras pegajosas del layout dentro del iframe si hubiera conflicto */
+              .hs-mobile-v1 .sticky { position: static !important; }
+              /* Backdrop para panel de controles */
+              .hs-mobile-controls-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 9998; }
+              .hs-mobile-controls-toggle { position: fixed; right: 12px; bottom: 88px; z-index: 10000; background: #334155; color: #e2e8f0; border: 1px solid #475569; padding: 10px 12px; border-radius: 12px; font-size: 13px; box-shadow: 0 6px 20px rgba(0,0,0,.3); }
+              .hs-mobile-controls-toggle:active { transform: scale(.98); }
+              /* Ocultar íconos superiores de las cards (duplicados con bottom nav) */
+              .hs-mobile-v1 .group.relative .text-3xl { display: none !important; }
+            `;
+            doc.head.appendChild(style);
+          }
+
+          // Añadir marca para scoping de estilos
+          doc.documentElement.classList.add('hs-mobile-v1');
+
+          // Helpers que fuerzan los cambios por JS (por si los estilos no alcanzan)
+          const hideHomeIcons = () => {
+            try {
+              const candidates = doc.querySelectorAll('.grid button .w-14.h-14, .grid button .text-3xl, [class*="w-14"][class*="h-14"]');
+              candidates.forEach(el => { el.style.setProperty('display','none','important'); });
+            } catch(_) {}
+          };
+
+          const hideSongLeftPanel = () => {
+            try {
+              // Intenta ocultar cualquier columna lateral marcada como no imprimible
+              const lefts = Array.from(doc.querySelectorAll('.no-print'));
+              if (lefts.length) {
+                lefts.forEach(el => el.style.setProperty('display','none','important'));
+              } else {
+                // Fallback: primera columna de una grilla de 12 columnas
+                let grid = doc.querySelector('.grid.grid-cols-12');
+                if (!grid) {
+                  grid = Array.from(doc.querySelectorAll('[class*="grid"][class*="grid-cols-"]')).find(el => el.children && el.children.length >= 2) || null;
+                }
+                if (grid && grid.firstElementChild) {
+                  grid.firstElementChild.style.setProperty('display','none','important');
+                }
+              }
+              const viewer = doc.getElementById('print-lyrics');
+              if (viewer) viewer.classList.add('song-fullscreen');
+            } catch(_) {}
+          };
+
+          // Home: ocultar íconos de tarjetas
+          if (path === '/app') hideHomeIcons();
+
+          // Song: ocultar panel izquierdo por defecto y agregar botón de controles
+          if (/^\/app\/song\//.test(path)) {
+            // Intentar ubicar la grilla principal
+            let grid = doc.querySelector('.grid.grid-cols-12');
+            if (!grid) {
+              grid = Array.from(doc.querySelectorAll('[class*="grid"][class*="grid-cols-"]')).find(el => el.children && el.children.length >= 2) || null;
+            }
+            if (!grid) return;
+            // La columna izquierda suele tener la clase no-print
+            const left = grid.querySelector('.no-print') || grid.firstElementChild;
+            const right = grid.children[1];
+            if (!left || !right) return;
+
+            // Ocultar columna izquierda por defecto
+            if (!(left).dataset) { (left).dataset = {}; }
+            (left).dataset.hsOriginalDisplay = (left).style.display || '';
+            left.style.setProperty('display','none','important');
+
+            // Asegurar viewer ocupa alto total
+            const viewer = doc.getElementById('print-lyrics');
+            if (viewer) viewer.classList.add('song-fullscreen');
+
+            // Crear botón flotante si no existe
+            if (!doc.getElementById('hs-controls-toggle')) {
+              const btn = doc.createElement('button');
+              btn.id = 'hs-controls-toggle';
+              btn.className = 'hs-mobile-controls-toggle';
+              btn.textContent = '⚙️ Controles';
+              btn.addEventListener('click', () => {
+                openControlsOverlay();
+              });
+              doc.body.appendChild(btn);
+            }
+
+            function openControlsOverlay() {
+              // Backdrop
+              const backdrop = doc.createElement('div');
+              backdrop.className = 'hs-mobile-controls-backdrop';
+              backdrop.addEventListener('click', closeControlsOverlay);
+              backdrop.id = 'hs-controls-backdrop';
+              doc.body.appendChild(backdrop);
+
+              // Mostrar el panel izquierdo como overlay fijo
+              left.style.display = 'block';
+              left.style.position = 'fixed';
+              left.style.inset = '8px 8px 84px 8px';
+              left.style.zIndex = '9999';
+              left.style.overflow = 'auto';
+              left.style.background = 'rgb(2,6,23)';
+              left.style.border = '1px solid #334155';
+              left.style.borderRadius = '12px';
+              left.style.boxShadow = '0 20px 60px rgba(0,0,0,.5)';
+
+              // Botón cerrar
+              if (!doc.getElementById('hs-controls-close')) {
+                const closeBtn = doc.createElement('button');
+                closeBtn.id = 'hs-controls-close';
+                closeBtn.textContent = 'Cerrar ✕';
+                closeBtn.style.position = 'fixed';
+                closeBtn.style.right = '16px';
+                closeBtn.style.top = '16px';
+                closeBtn.style.zIndex = '10001';
+                closeBtn.style.background = '#334155';
+                closeBtn.style.color = '#e2e8f0';
+                closeBtn.style.border = '1px solid #475569';
+                closeBtn.style.padding = '8px 10px';
+                closeBtn.style.borderRadius = '10px';
+                closeBtn.style.boxShadow = '0 6px 20px rgba(0,0,0,.3)';
+                closeBtn.addEventListener('click', closeControlsOverlay);
+                doc.body.appendChild(closeBtn);
+              }
+
+              function closeControlsOverlay() {
+                const bd = doc.getElementById('hs-controls-backdrop');
+                if (bd) bd.remove();
+                const cb = doc.getElementById('hs-controls-close');
+                if (cb) cb.remove();
+                // Revertir estilos
+                left.style.setProperty('display','none','important');
+                left.style.position = '';
+                left.style.inset = '';
+                left.style.zIndex = '';
+                left.style.overflow = '';
+                left.style.background = '';
+                left.style.border = '';
+                left.style.borderRadius = '';
+                left.style.boxShadow = '';
+              }
+            }
+            // Además, deja observadores para mantener los cambios
+            ensureObservers();
+          }
+
+          function ensureObservers(){
+            try {
+              if (doc._hsMobileObserver) return;
+              const obs = new MutationObserver(() => {
+                const p = new URL(doc.location.href).pathname;
+                if (p === '/app') hideHomeIcons();
+                if (/^\/app\/song\//.test(p)) hideSongLeftPanel();
+              });
+              obs.observe(doc.body, { subtree: true, childList: true, attributes: true });
+              doc._hsMobileObserver = obs;
+            } catch(_) {}
+          }
+          }
+        }
+
+        // Observa cambios de ruta dentro del iframe (SPA) y reaplica tweaks
+        let lastPath = null;
+        setInterval(() => {
+          try {
+            if (!frame || !frame.contentWindow) return;
+            const currentPath = new URL(frame.contentWindow.location.href).pathname;
+            if (currentPath !== lastPath) {
+              lastPath = currentPath;
+              setActive(currentPath);
+              applyMobileTweaks(frame.contentDocument, currentPath);
+            }
+          } catch (_) { /* ignore */ }
+        }, 300);
+      })();
+    </script>
+  </body>
+  </html>
