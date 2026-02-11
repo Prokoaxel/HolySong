@@ -31,9 +31,15 @@ type SongViewerProps = {
   onSwipeNext?: () => void
   externalTranspose?: number
   externalCapo?: number
+  externalFontSize?: number
+  autoScroll?: boolean
+  autoScrollSpeed?: number
+  musicianMode?: boolean
 }
 
 const NOTES_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
+const CHORD_TOKEN_REGEX =
+  /^([A-G](?:#|b)?)(?:(maj|min|m|dim|aug|sus|add|M)?((?:\d+)?(?:[#b]\d+)?(?:sus[24])?(?:add\d+)?(?:\([^)]+\))?))?(?:\/([A-G](?:#|b)?))?$/
 const normalizeNote = (note: string) => {
   const map: Record<string, string> = { Db:'C#', Eb:'D#', Gb:'F#', Ab:'G#', Bb:'A#' }
   return map[note] || note
@@ -232,11 +238,15 @@ const SongViewerFixed: React.FC<SongViewerProps> = ({
   onSwipePrev,
   onSwipeNext,
   externalTranspose,
-  externalCapo
+  externalCapo,
+  externalFontSize,
+  autoScroll,
+  autoScrollSpeed,
+  musicianMode = false
 }) => {
   const [localInstrument] = useState<Instrument>('guitar')
   const instrument = controls?.instrument ?? localInstrument
-  const fontSize = controls?.fontSize ?? 16
+  const fontSize = externalFontSize ?? controls?.fontSize ?? 16
   const transposeSteps = externalTranspose !== undefined ? externalTranspose : (controls?.transposeSteps ?? 0)
   const capo = externalCapo !== undefined ? externalCapo : (controls?.capo ?? 0)
   const [showDiagram, setShowDiagram] = useState<boolean>(false)
@@ -245,6 +255,7 @@ const SongViewerFixed: React.FC<SongViewerProps> = ({
   const chordBtnRefs = useRef<{[key:number]:HTMLButtonElement|null}>({})
   const notes = useMemo(() => getChordNotesFromSymbol(activeChord), [activeChord])
   const lyricsRef = useRef<HTMLDivElement>(null)
+  const autoScrollTimerRef = useRef<number | null>(null)
   
   // Swipe detection
   const touchStartX = useRef<number>(0)
@@ -281,11 +292,12 @@ const SongViewerFixed: React.FC<SongViewerProps> = ({
   }
 
   const transposeChord = (ch: string, steps: number) => {
-    const m = ch.match(/^([A-G](?:#|b)?)(m|maj7|7|sus2|sus4)?(?:\/([A-G](?:#|b)?))?$/)
+    const m = ch.match(CHORD_TOKEN_REGEX)
     if (!m) return ch
     const root = transposeNote(m[1], steps)
-    const qual = m[2] || ''
-    const bass = m[3] ? '/' + transposeNote(m[3], steps) : ''
+    const quality = `${m[2] || ''}${m[3] || ''}`
+    const bass = m[4] ? '/' + transposeNote(m[4], steps) : ''
+    const qual = quality || ''
     return `${root}${qual}${bass}`
   }
 
@@ -377,9 +389,32 @@ const SongViewerFixed: React.FC<SongViewerProps> = ({
     setCommentMarkers(markers)
   }, [comments, content, fontSize, transposeSteps, capo])
 
+  useEffect(() => {
+    if (autoScrollTimerRef.current) {
+      window.clearInterval(autoScrollTimerRef.current)
+      autoScrollTimerRef.current = null
+    }
+    if (!autoScroll || !lyricsRef.current) return
+
+    const speed = Math.max(0.2, Math.min(5, autoScrollSpeed ?? 1.1))
+    autoScrollTimerRef.current = window.setInterval(() => {
+      const container = lyricsRef.current
+      if (!container) return
+      const atBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 4
+      container.scrollTop = atBottom ? 0 : container.scrollTop + speed
+    }, 70)
+
+    return () => {
+      if (autoScrollTimerRef.current) {
+        window.clearInterval(autoScrollTimerRef.current)
+        autoScrollTimerRef.current = null
+      }
+    }
+  }, [autoScroll, autoScrollSpeed, content])
+
   const renderContent = () => {
     // Detecta acordes como tokens sueltos: C, G, D7, G7, D/F#, A# etc.
-    const chordToken = /^([A-G](?:#|b)?(?:m|maj7|7|sus2|sus4)?(?:\/[A-G](?:#|b)?)?)$/
+    const chordToken = CHORD_TOKEN_REGEX
     
     return (
       <>
@@ -392,7 +427,11 @@ const SongViewerFixed: React.FC<SongViewerProps> = ({
               <button
                 key={idx}
                 ref={el => chordBtnRefs.current[idx] = el}
-                className="mx-0.5 px-2 py-1 rounded-md border-2 text-[12px] font-bold bg-gradient-to-br from-teal-500/20 to-teal-600/20 border-teal-400/70 text-teal-200 hover:from-teal-500/30 hover:to-teal-600/30 hover:border-teal-300 hover:scale-110 transition-all shadow-lg shadow-teal-500/20"
+                className={
+                  musicianMode
+                    ? 'mx-0.5 px-0.5 whitespace-nowrap text-[0.9em] font-bold text-orange-500 hover:text-orange-400 transition-colors'
+                    : 'mx-0.5 px-2 py-1 whitespace-nowrap rounded-md border-2 text-[12px] font-bold bg-gradient-to-br from-teal-500/20 to-teal-600/20 border-teal-400/70 text-teal-200 hover:from-teal-500/30 hover:to-teal-600/30 hover:border-teal-300 hover:scale-110 transition-all shadow-lg shadow-teal-500/20'
+                }
                 onClick={() => {
                   setActiveChord(chord);
                   setShowDiagram(true);
@@ -421,18 +460,28 @@ const SongViewerFixed: React.FC<SongViewerProps> = ({
             )
           }
           // mantener espacios exactamente como vienen - NO renderizar iconos en la letra
-          return <span key={idx} style={{ fontSize }}>{tok}</span>
+          return (
+            <span
+              key={idx}
+              style={{
+                fontSize,
+                fontFamily: musicianMode ? '"Courier New", Courier, monospace' : undefined,
+              }}
+            >
+              {tok}
+            </span>
+          )
         })}
       </>
     )
   }
   return (
-    <div className="pt-0 px-0 md:px-1 pb-0 md:pb-1 text-slate-200 h-full">
+    <div className={`pt-0 px-0 md:px-1 pb-0 md:pb-1 h-full ${musicianMode ? 'text-slate-100' : 'text-slate-200'}`}>
       {/* Contenedor centrado */}
       <div className="md:max-w-3xl md:mx-auto h-full">
-        <div className="md:rounded-md md:border md:border-slate-700 md:bg-slate-900/60 p-3 md:p-4 relative h-full">
+        <div className={musicianMode ? 'md:rounded-md md:border md:border-slate-600 md:bg-slate-800/80 p-3 md:p-4 relative h-full' : 'md:rounded-md md:border md:border-slate-700 md:bg-slate-900/60 p-3 md:p-4 relative h-full'}>
           <h1 className="text-base md:text-lg font-semibold mb-1">{title}</h1>
-          <p className="text-[11px] md:text-[12px] text-slate-400 mb-2 md:mb-3">Tono: {tone}</p>
+          <p className={`text-[11px] md:text-[12px] mb-2 md:mb-3 ${musicianMode ? 'text-slate-300' : 'text-slate-400'}`}>Tono: {tone}</p>
           
           {/* Indicador de modo comentario con animación mejorada */}
           {commentMode && (
@@ -458,13 +507,18 @@ const SongViewerFixed: React.FC<SongViewerProps> = ({
             <div 
               ref={lyricsRef}
               className={
-                "song-content-container text-sm whitespace-pre-wrap leading-7 relative rounded-lg transition-all duration-300 " +
+                "song-content-container text-sm whitespace-pre relative rounded-lg transition-all duration-300 max-h-[70vh] overflow-auto scroll-dark pb-24 md:pb-6 " +
                 (commentMode ? "p-3 bg-slate-800/30 ring-2 ring-teal-400/30" : "")
               }
               style={{ 
                 fontSize, 
+                lineHeight: musicianMode ? 1.32 : undefined,
+                fontFamily: musicianMode ? '"Courier New", Courier, monospace' : undefined,
                 userSelect: commentMode ? 'text' : 'auto',
-                textShadow: '0 1px 2px rgba(0,0,0,0.8), 0 0 1px rgba(255,255,255,0.1)' // Contorno sutil
+                scrollPaddingBottom: '8rem',
+                textShadow: musicianMode
+                  ? 'none'
+                  : '0 1px 2px rgba(0,0,0,0.8), 0 0 1px rgba(255,255,255,0.1)'
               }}
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}

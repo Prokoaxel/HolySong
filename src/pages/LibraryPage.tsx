@@ -1,34 +1,78 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
-
+import { cacheSongList, readCachedSongList } from '../lib/offlineSongs'
 import type { Song } from '../types'
+import ArtistAvatar from '../components/ui/ArtistAvatar'
+import { useAuth } from '../hooks/useAuth'
+
+type SongListItem = Song & {
+  versionCount?: number
+}
+
+const OWNER_EMAIL = 'axelproko2016@gmail.com'
 
 const LibraryPage: React.FC = () => {
   const navigate = useNavigate()
+  const { user } = useAuth()
 
-  const [songs, setSongs] = useState<Song[]>([])
+  const [songs, setSongs] = useState<SongListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [menuSong, setMenuSong] = useState<SongListItem | null>(null)
+  const [processingMenuAction, setProcessingMenuAction] = useState(false)
 
-  // NUEVO: selección y borrado
-  const [selectionMode, setSelectionMode] = useState(false)
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [working, setWorking] = useState(false)
+  const longPressTimerRef = useRef<number | null>(null)
+  const longPressFiredRef = useRef(false)
 
   useEffect(() => {
     const load = async () => {
       setLoading(true)
       const { data, error } = await supabase
         .from('songs')
-        .select('id,title,author,tone')
-        .order('title', { ascending: true }) // GLOBAL
+        .select('id,title,author,tone,owner_id')
+        .order('title', { ascending: true })
 
       if (!error && data) {
-        setSongs(data as Song[])
+        const loaded = data as SongListItem[]
+        const ids = loaded.map(song => song.id).filter(Boolean)
+
+        const versionCountMap: Record<string, number> = {}
+        if (ids.length > 0) {
+          const { data: versionsData, error: versionsError } = await supabase
+            .from('song_versions')
+            .select('song_id')
+            .in('song_id', ids)
+
+          if (!versionsError && versionsData) {
+            for (const row of versionsData as Array<{ song_id: string }>) {
+              const songId = row.song_id
+              versionCountMap[songId] = (versionCountMap[songId] || 0) + 1
+            }
+          } else if (versionsError) {
+            console.warn('No se pudo cargar el conteo de versiones:', versionsError.message)
+          }
+        }
+
+        const withVersionCount = loaded.map(song => ({
+          ...song,
+          versionCount: 1 + (versionCountMap[song.id] || 0),
+        }))
+        setSongs(withVersionCount)
+        cacheSongList(withVersionCount)
       } else if (error) {
         console.error(error)
-        alert('Error cargando biblioteca: ' + error.message)
+        const cached = readCachedSongList()
+        if (cached.length > 0) {
+          setSongs((cached as SongListItem[]).map(song => ({
+            ...song,
+            versionCount: (song as SongListItem).versionCount || 1,
+          })))
+          alert('Sin conexion: mostrando canciones guardadas localmente.')
+        } else {
+          alert('Error cargando biblioteca: ' + error.message)
+        }
       }
 
       setLoading(false)
@@ -37,245 +81,274 @@ const LibraryPage: React.FC = () => {
     load()
   }, [])
 
-  const filtered = songs.filter(s =>
-    (s.title || '').toLowerCase().includes(search.toLowerCase()),
-  )
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) window.clearTimeout(longPressTimerRef.current)
+    }
+  }, [])
 
-  const toggleSelectionMode = () => {
-    setSelectionMode(prev => {
-      const next = !prev
-      if (!next) setSelectedIds([])
-      return next
-    })
-  }
-
-  const toggleSelection = (id: string) => {
-    setSelectedIds(prev =>
-      prev.includes(id)
-        ? prev.filter(x => x !== id)
-        : [...prev, id],
-    )
-  }
+  const normalizedSearch = search.toLowerCase().trim()
+  const filtered = songs.filter(s => {
+    if (!normalizedSearch) return true
+    const title = (s.title || '').toLowerCase()
+    const author = (s.author || '').toLowerCase()
+    return title.includes(normalizedSearch) || author.includes(normalizedSearch)
+  })
 
   const openSong = (id: string) => {
-    if (selectionMode) {
-      toggleSelection(id)
-    } else {
-      navigate(`/app/song/${id}`)
+    navigate(`/app/song/${id}`)
+  }
+
+  const isCreatorAccount = () => (user?.email || '').toLowerCase() === OWNER_EMAIL
+
+  const requestSecurityCode = (actionLabel: string) => {
+    const code = window.prompt(`Ingresa el codigo de seguridad para ${actionLabel}:`)
+    if (code !== '030103') {
+      alert('Codigo incorrecto. Accion cancelada.')
+      return false
+    }
+    return true
+  }
+
+  const startLongPress = (song: SongListItem) => {
+    if (longPressTimerRef.current) window.clearTimeout(longPressTimerRef.current)
+    longPressFiredRef.current = false
+    longPressTimerRef.current = window.setTimeout(() => {
+      longPressFiredRef.current = true
+      setMenuSong(song)
+    }, 3000)
+  }
+
+  const cancelLongPress = () => {
+    if (longPressTimerRef.current) {
+      window.clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
     }
   }
 
-  const handleDeleteSelected = async () => {
-    if (selectedIds.length === 0) return
+  const handleItemClick = (songId: string) => {
+    if (longPressFiredRef.current) {
+      longPressFiredRef.current = false
+      return
+    }
+    openSong(songId)
+  }
 
-    const ok = window.confirm(
-      `¿Eliminar ${selectedIds.length} canción(es) de la biblioteca global?`,
-    )
+  const handleEditSong = () => {
+    if (!menuSong) return
+    if (!requestSecurityCode('editar la cancion')) return
+    setMenuSong(null)
+    navigate(`/app/import?songId=${menuSong.id}`)
+  }
+
+  const handleCreateVersion = async () => {
+    if (!menuSong) return
+    if (!requestSecurityCode('crear una nueva version')) return
+
+    try {
+      setProcessingMenuAction(true)
+
+      const { data: baseSong, error: baseError } = await supabase
+        .from('songs')
+        .select('id,tone,content')
+        .eq('id', menuSong.id)
+        .maybeSingle()
+
+      if (baseError || !baseSong) {
+        throw baseError || new Error('No se pudo cargar la cancion base.')
+      }
+
+      const { data: existingVersions, error: versionsError } = await supabase
+        .from('song_versions')
+        .select('version_label')
+        .eq('song_id', menuSong.id)
+
+      if (versionsError) throw versionsError
+
+      const usedNumbers = (existingVersions || [])
+        .map((v: any) => {
+          const m = /^Version\s+(\d+)$/i.exec(v.version_label || '')
+          return m ? parseInt(m[1], 10) : null
+        })
+        .filter((n: number | null): n is number => typeof n === 'number')
+      const nextNumber = usedNumbers.length > 0 ? Math.max(...usedNumbers) + 1 : 1
+
+      const { error: insertError } = await supabase
+        .from('song_versions')
+        .insert({
+          song_id: menuSong.id,
+          version_label: `Version ${nextNumber}`,
+          tone: baseSong.tone || null,
+          content: baseSong.content || '',
+        })
+
+      if (insertError) throw insertError
+
+      setSongs(prev => prev.map(song =>
+        song.id === menuSong.id
+          ? { ...song, versionCount: (song.versionCount || 1) + 1 }
+          : song,
+      ))
+
+      setMenuSong(null)
+      alert(`Version ${nextNumber} creada correctamente.`)
+    } catch (err: any) {
+      console.error(err)
+      alert('No se pudo crear la nueva version: ' + (err?.message || ''))
+    } finally {
+      setProcessingMenuAction(false)
+    }
+  }
+
+  const handleDeleteSong = async () => {
+    if (!menuSong) return
+    if (!requestSecurityCode('eliminar la cancion')) return
+
+    const ok = window.confirm(`Se eliminara "${menuSong.title}" y sus versiones. Continuar?`)
     if (!ok) return
 
     try {
-      setWorking(true)
-      const { error } = await supabase
+      setProcessingMenuAction(true)
+
+      await supabase.from('song_versions').delete().eq('song_id', menuSong.id)
+      await supabase.from('folder_songs').delete().eq('song_id', menuSong.id)
+
+      const { error: deleteSongError } = await supabase
         .from('songs')
         .delete()
-        .in('id', selectedIds)
+        .eq('id', menuSong.id)
 
-      if (error) throw error
+      if (deleteSongError) throw deleteSongError
 
-      setSongs(prev =>
-        prev.filter(s => !selectedIds.includes(s.id)),
-      )
-      setSelectedIds([])
-      setSelectionMode(false)
+      setSongs(prev => prev.filter(s => s.id !== menuSong.id))
+      setMenuSong(null)
+      alert('Cancion eliminada correctamente.')
     } catch (err: any) {
       console.error(err)
-      alert('Error eliminando canciones: ' + err.message)
+      alert('No se pudo eliminar la cancion: ' + (err?.message || ''))
     } finally {
-      setWorking(false)
+      setProcessingMenuAction(false)
     }
   }
 
-  const isSelected = (id: string) => selectedIds.includes(id)
-
   return (
     <div className="max-w-6xl mx-auto space-y-4 md:space-y-6 fade-in">
-      {/* Cabecera mejorada con gradiente */}
       <div className="relative rounded-xl bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900 border-2 border-purple-400/40 p-4 md:p-5 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-purple-500/10 to-pink-500/5 animate-[shimmer_3s_ease-in-out_infinite]" />
-        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 bg-purple-500/30 rounded-full blur-lg animate-pulse" />
-              <span className="relative text-3xl md:text-4xl">📚</span>
-            </div>
-            <div>
-              <h1 className="text-lg md:text-xl font-bold bg-gradient-to-r from-purple-200 to-pink-200 bg-clip-text text-transparent mb-1">
-                Biblioteca global
-              </h1>
-              <p className="text-xs md:text-sm text-slate-300">
-                Todas las canciones cargadas en HolySong.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3 items-stretch md:items-end w-full md:w-auto">
-            <div className="w-full md:max-w-xs">
-              <label className="flex items-center gap-1.5 text-xs md:text-[11px] text-slate-300 mb-2 font-medium">
-                <span>🔍</span>
-                Buscar por título
-              </label>
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Escribí el nombre..."
-                className="w-full rounded-lg bg-slate-900/80 border-2 border-slate-700 focus:border-purple-500/50 px-4 py-3 md:py-2 text-base md:text-sm outline-none transition-all"
-              />
-            </div>
-
-            {filtered.length > 0 && (
-              <button
-                onClick={toggleSelectionMode}
-                className={
-                  'self-stretch md:self-end rounded-lg px-4 py-3 md:py-2 text-sm md:text-xs font-semibold transition-all hover:scale-105 flex items-center justify-center gap-2 min-h-[44px] md:min-h-0 ' +
-                  (selectionMode
-                    ? 'bg-slate-700 hover:bg-slate-600 border border-slate-600'
-                    : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 shadow-lg')
-                }
-              >
-                {selectionMode ? (
-                  <>
-                    <span>✖️</span>
-                    Cancelar
-                  </>
-                ) : (
-                  <>
-                    <span>☑️</span>
-                    Seleccionar
-                  </>
-                )}
-              </button>
-            )}
-          </div>
+        <div className="relative">
+          <label className="flex items-center gap-1.5 text-xs md:text-[11px] text-slate-300 mb-2 font-medium">
+            <span>Buscar por titulo o artista</span>
+          </label>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Escribi titulo o artista..."
+            className="w-full rounded-lg bg-slate-900/80 border-2 border-slate-700 focus:border-purple-500/50 px-4 py-3 md:py-2 text-base md:text-sm outline-none transition-all"
+          />
         </div>
       </div>
 
-      {/* Barra de acciones selección - Arriba */}
-      {selectionMode && (
-        <div className="animate-[fadeIn_300ms_ease]">
-          <div className="rounded-xl border-2 border-purple-500/50 bg-gradient-to-r from-slate-900 via-purple-900/30 to-slate-900 px-4 md:px-5 py-4 flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-0 md:justify-between shadow-lg shadow-purple-500/30">
-            <div className="flex items-center gap-3 justify-center md:justify-start">
-              <span className="text-2xl">{selectedIds.length > 0 ? '✅' : '☑️'}</span>
-              <span className="text-sm md:text-base font-semibold text-slate-200">
-                {selectedIds.length === 0
-                  ? 'Seleccioná canciones'
-                  : `${selectedIds.length} seleccionada${selectedIds.length > 1 ? 's' : ''}`}
-              </span>
-            </div>
-            <button
-              onClick={handleDeleteSelected}
-              disabled={working || selectedIds.length === 0}
-              className={
-                'px-5 py-3 md:py-2.5 rounded-lg text-sm md:text-sm font-bold transition-all hover:scale-105 flex items-center justify-center gap-2 min-h-[44px] md:min-h-0 ' +
-                (selectedIds.length > 0 && !working
-                  ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white shadow-lg shadow-red-500/40'
-                  : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50')
-              }
-            >
-              {working ? (
-                <>
-                  <span className="animate-spin">⚙️</span>
-                  Eliminando...
-                </>
-              ) : (
-                <>
-                  <span>🗑️</span>
-                  Eliminar
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Lista mejorada con animaciones */}
-      <div className="rounded-xl border-2 border-slate-700 hover:border-purple-500/50 bg-gradient-to-br from-slate-900/90 to-slate-800/80 p-3 md:p-4 transition-all hover:shadow-lg hover:shadow-purple-500/20">
+      <div className="rounded-xl border border-slate-700/80 bg-gradient-to-br from-slate-900/95 to-slate-900/80 p-2 md:p-3">
         {loading ? (
-          <div className="flex items-center justify-center gap-3 py-8 md:py-8">
-            <span className="text-2xl md:text-3xl animate-spin">⚙️</span>
-            <p className="text-sm md:text-base text-slate-300 font-medium">
-              Cargando canciones...
-            </p>
+          <div className="flex items-center justify-center py-8 md:py-8">
+            <p className="text-sm md:text-base text-slate-300 font-medium">Cargando canciones...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-12">
-            <span className="text-5xl">🔍</span>
-            <p className="text-sm md:text-base text-slate-300 font-medium">
-              No se encontraron canciones
-            </p>
-            <p className="text-xs md:text-sm text-slate-400">
-              Intentá con otro término
-            </p>
+            <p className="text-sm md:text-base text-slate-300 font-medium">No se encontraron canciones</p>
+            <p className="text-xs md:text-sm text-slate-400">Intenta con otro termino</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="rounded-lg border border-slate-800/90 overflow-hidden bg-slate-950/35">
             {filtered.map((song, idx) => (
               <button
                 key={song.id}
-                onClick={() => openSong(song.id)}
-                style={{ animationDelay: `${idx * 30}ms` }}
-                className={
-                  'w-full text-left rounded-lg px-3 md:px-4 py-3 md:py-3 min-h-[60px] transition-all hover:scale-[1.01] flex items-center gap-3 md:gap-4 animate-[fadeIn_300ms_ease] ' +
-                  (selectionMode && isSelected(song.id)
-                    ? 'bg-gradient-to-r from-teal-900/40 to-teal-800/40 ring-2 ring-teal-400 shadow-lg shadow-teal-500/20'
-                    : 'bg-slate-900/60 hover:bg-slate-800/80 border border-slate-700 hover:border-purple-500/50')
-                }
+                onClick={() => handleItemClick(song.id)}
+                onTouchStart={() => startLongPress(song)}
+                onTouchEnd={cancelLongPress}
+                onTouchCancel={cancelLongPress}
+                onMouseDown={() => startLongPress(song)}
+                onMouseUp={cancelLongPress}
+                onMouseLeave={cancelLongPress}
+                onContextMenu={e => e.preventDefault()}
+                style={{
+                  animationDelay: `${idx * 30}ms`,
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                  WebkitTouchCallout: 'none',
+                }}
+                className="w-full select-none text-left px-3 md:px-4 py-2.5 md:py-2.5 min-h-[48px] transition-colors flex items-center gap-2.5 md:gap-3 animate-[fadeIn_300ms_ease] bg-slate-900/35 hover:bg-slate-800/65 border-b border-slate-800/70 last:border-b-0"
               >
-                <div className="relative flex-shrink-0">
-                  <div className={
-                    'w-12 h-12 rounded-lg flex items-center justify-center text-xl transition-all ' +
-                    (isSelected(song.id) 
-                      ? 'bg-gradient-to-br from-teal-500/30 to-teal-600/20 border-2 border-teal-400' 
-                      : 'bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-slate-700')
-                  }>
-                    🎵
-                  </div>
-                  {selectionMode && isSelected(song.id) && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-teal-500 flex items-center justify-center text-[10px] animate-bounce">
-                      ✓
-                    </div>
-                  )}
-                </div>
-                
+                <ArtistAvatar author={song.author} sizeClassName="w-8 h-8" />
+
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm md:text-base font-semibold text-slate-100 truncate">
-                    {song.title}
-                  </p>
-                  <div className="flex items-center gap-2 text-xs md:text-[11px] text-slate-400 mt-1 flex-wrap">
+                  <p className="text-[13px] md:text-sm font-semibold text-slate-100 truncate">{song.title}</p>
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5 flex-wrap">
                     {song.author && (
-                      <span className="flex items-center gap-1 truncate max-w-[150px] md:max-w-none">
-                        <span>👤</span>
-                        <span className="truncate">{song.author}</span>
+                      <span className="truncate max-w-[160px] md:max-w-none">
+                        {song.author}
                       </span>
                     )}
                     {song.tone && (
-                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-400/30 text-orange-200">
-                        <span>🎹</span>
+                      <span className="px-1.5 py-0.5 rounded-md bg-orange-500/10 border border-orange-400/30 text-orange-200 font-semibold">
                         {song.tone}
                       </span>
                     )}
                   </div>
                 </div>
 
-                {selectionMode && !isSelected(song.id) && (
-                  <div className="w-6 h-6 rounded-md border-2 border-slate-600 flex items-center justify-center bg-slate-900/50 transition-all hover:border-purple-400 flex-shrink-0">
-                  </div>
-                )}
+                <span className="px-2 py-1 rounded-md bg-purple-500/10 border border-purple-400/35 text-purple-200 text-[10px] md:text-[11px] font-semibold whitespace-nowrap">
+                  {song.versionCount || 1} {(song.versionCount || 1) === 1 ? 'version' : 'versiones'}
+                </span>
+
+                <span className="text-slate-500 text-sm leading-none">{'>'}</span>
               </button>
             ))}
           </div>
         )}
       </div>
 
+      {menuSong && createPortal(
+        <div className="fixed inset-0 z-[130]">
+          <button
+            className="absolute inset-0 bg-black/70"
+            onClick={() => !processingMenuAction && setMenuSong(null)}
+            aria-label="Cerrar menu"
+          />
+          <div className="absolute left-1/2 top-1/2 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-600 bg-slate-900 p-3 shadow-2xl">
+            <div className="mb-3">
+              <p className="text-sm font-semibold text-slate-100 truncate">{menuSong.title}</p>
+              <p className="text-[11px] text-slate-400 mt-1">Menu de cancion (presion larga 3 segundos)</p>
+              <p className="text-[10px] text-slate-500 mt-1">Duenio principal de la app: {OWNER_EMAIL}</p>
+            </div>
+
+            <div className="space-y-2">
+              <button
+                onClick={handleEditSong}
+                disabled={processingMenuAction}
+                className="w-full rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2.5 text-sm text-slate-100 hover:bg-slate-700 disabled:opacity-60"
+              >
+                Editar letra
+              </button>
+              <button
+                onClick={handleCreateVersion}
+                disabled={processingMenuAction}
+                className="w-full rounded-lg border border-purple-500/40 bg-purple-500/10 px-3 py-2.5 text-sm text-purple-100 hover:bg-purple-500/20 disabled:opacity-60"
+              >
+                Crear nueva version
+              </button>
+              <button
+                onClick={handleDeleteSong}
+                disabled={processingMenuAction}
+                className="w-full rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2.5 text-sm text-red-100 hover:bg-red-500/20 disabled:opacity-60"
+              >
+                Eliminar cancion
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   )
 }

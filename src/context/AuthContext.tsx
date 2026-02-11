@@ -11,12 +11,28 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+const isBypassAuthEnabled =
+  import.meta.env.DEV && String(import.meta.env.VITE_BYPASS_AUTH || '').toLowerCase() === 'true'
+
+const getBypassUser = (): User =>
+  ({
+    id: 'local-dev-user',
+    email: 'local@holysong.dev',
+    aud: 'authenticated',
+    role: 'authenticated',
+  } as User)
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // cargar sesión al iniciar
   useEffect(() => {
+    if (isBypassAuthEnabled) {
+      setUser(getBypassUser())
+      setLoading(false)
+      return
+    }
+
     const load = async () => {
       const { data } = await supabase.auth.getUser()
       if (data?.user) setUser(data.user)
@@ -34,18 +50,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [])
 
   const signInWithGoogle = async () => {
+    if (isBypassAuthEnabled) {
+      setUser(getBypassUser())
+      return
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/app`,
       },
     })
+
     if (error) {
-      alert('Error iniciando sesión: ' + error.message)
+      alert('Error iniciando sesion: ' + error.message)
     }
   }
 
   const signOut = async () => {
+    if (isBypassAuthEnabled) {
+      setUser(null)
+      return
+    }
     await supabase.auth.signOut()
     setUser(null)
   }

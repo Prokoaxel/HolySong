@@ -4,12 +4,15 @@ export type Song = {
   author?: string | null
   tone?: string | null
   content?: string | null
+  owner_id?: string | null
 }
 
 export type Folder = {
   id: string
   name: string
   owner_id?: string | null
+  emoji?: string | null
+  description?: string | null
 }
 
 export type FolderSong = {

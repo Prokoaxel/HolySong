@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../hooks/useAuth'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { createWorker } from 'tesseract.js'
+import { canonicalizeArtistName } from '../lib/artistResolver'
+import { WORSHIP_SET_SONGS } from '../data/worshipSetSongs'
 
 type FormState = {
   title: string
@@ -45,6 +47,10 @@ const ImportSongPage: React.FC = () => {
   const [ocrLoading, setOcrLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [loadingInitial, setLoadingInitial] = useState(false)
+  const [showManualForm, setShowManualForm] = useState(isEditing)
+  const [showOcrSection, setShowOcrSection] = useState(isEditing)
+  const [importingWorshipSet, setImportingWorshipSet] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   // Cargar datos si estamos editando canción o versión
   useEffect(() => {
@@ -129,6 +135,13 @@ const ImportSongPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [songIdParam, versionIdParam])
 
+  useEffect(() => {
+    if (isEditing) {
+      setShowManualForm(true)
+      setShowOcrSection(true)
+    }
+  }, [isEditing])
+
   const handleChange =
     (field: keyof FormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -140,6 +153,12 @@ const ImportSongPage: React.FC = () => {
     const f = e.target.files?.[0] || null
     setFile(f)
     setOcrText('')
+    if (f) setShowOcrSection(true)
+  }
+
+  const handleOpenFilePicker = () => {
+    setShowOcrSection(true)
+    fileInputRef.current?.click()
   }
 
   const handleRunOcr = async () => {
@@ -199,6 +218,8 @@ const ImportSongPage: React.FC = () => {
     setSaving(true)
 
     try {
+      const normalizedAuthor = canonicalizeArtistName(form.author).name
+
       // Si hay tono, lo agregamos al principio del contenido como "Tono: X"
       let contentWithTone = form.content
       if (form.tone && !/^Tono:/i.test(form.content.trim())) {
@@ -228,7 +249,7 @@ const ImportSongPage: React.FC = () => {
           .from('songs')
           .update({
             title: form.title,
-            author: form.author,
+            author: normalizedAuthor,
             composer: form.composer,
             tone: form.tone,
             content: contentWithTone,
@@ -248,7 +269,7 @@ const ImportSongPage: React.FC = () => {
         .insert({
           owner_id: user.id,
           title: form.title,
-          author: form.author,
+          author: normalizedAuthor,
           composer: form.composer,
           tone: form.tone,
           content: contentWithTone,
@@ -275,6 +296,53 @@ const ImportSongPage: React.FC = () => {
       alert('Error guardando: ' + (err?.message ?? ''))
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleImportWorshipSet = async () => {
+    if (!user) {
+      alert('Debes iniciar sesion para importar canciones.')
+      return
+    }
+
+    try {
+      setImportingWorshipSet(true)
+
+      const titles = WORSHIP_SET_SONGS.map(song => song.title)
+      const { data: existingSongs, error: existingError } = await supabase
+        .from('songs')
+        .select('title')
+        .in('title', titles)
+
+      if (existingError) throw existingError
+
+      const existingTitleSet = new Set((existingSongs || []).map((row: any) => String(row.title || '').trim().toLowerCase()))
+      const rowsToInsert = WORSHIP_SET_SONGS
+        .filter(song => !existingTitleSet.has(song.title.trim().toLowerCase()))
+        .map(song => ({
+          owner_id: user.id,
+          title: song.title,
+          author: canonicalizeArtistName(song.author).name,
+          composer: song.composer || song.author,
+          tone: song.tone || '',
+          content: `Letra pendiente para: ${song.title}\n\n[Verso]\n\n[Coro]\n`,
+        }))
+
+      if (rowsToInsert.length === 0) {
+        alert('La lista ya estaba importada.')
+        return
+      }
+
+      const { error: insertError } = await supabase.from('songs').insert(rowsToInsert)
+      if (insertError) throw insertError
+
+      alert(`Importacion masiva completada: ${rowsToInsert.length} canciones agregadas.`)
+      navigate('/app/library')
+    } catch (err: any) {
+      console.error(err)
+      alert('Error en importacion masiva: ' + (err?.message || ''))
+    } finally {
+      setImportingWorshipSet(false)
     }
   }
 
@@ -319,7 +387,34 @@ const ImportSongPage: React.FC = () => {
         <p className="text-xs text-slate-400">Cargando datos...</p>
       ) : (
         <>
+          {!isEditing && (
+            <div className="rounded-lg sm:rounded-2xl border border-slate-700 sm:border-2 bg-gradient-to-br from-slate-900/90 to-slate-800/80 p-3 sm:p-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                <button
+                  onClick={() => setShowManualForm(true)}
+                  className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 px-4 py-3 text-sm font-bold transition-all"
+                >
+                  Importar cancion
+                </button>
+                <button
+                  onClick={handleOpenFilePicker}
+                  className="rounded-lg bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 px-4 py-3 text-sm font-bold transition-all"
+                >
+                  Seleccionar archivo o foto
+                </button>
+              </div>
+              <button
+                onClick={handleImportWorshipSet}
+                disabled={importingWorshipSet}
+                className="mt-2.5 w-full rounded-lg bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 disabled:from-slate-700 disabled:to-slate-700 px-4 py-3 text-sm font-bold transition-all disabled:opacity-60"
+              >
+                {importingWorshipSet ? 'Importando lista...' : 'Importacion masiva (lista cristiana)'}
+              </button>
+            </div>
+          )}
+
           {/* archivo + OCR */}
+          {(isEditing || showOcrSection) && (
           <div className="rounded-lg sm:rounded-2xl border border-slate-700 sm:border-2 hover:border-purple-500/50 bg-gradient-to-br from-slate-900/90 to-slate-800/80 p-3 sm:p-6 space-y-3 sm:space-y-4 text-sm transition-all hover:shadow-lg hover:shadow-purple-500/20">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-2 sm:mb-3">
               <div className="flex items-center gap-2 sm:gap-3">
@@ -334,6 +429,7 @@ const ImportSongPage: React.FC = () => {
                 type="file"
                 accept="image/*,.png,.jpg,.jpeg,.gif,.bmp"
                 onChange={handleFileChange}
+                ref={fileInputRef}
                 className="w-full text-[11px] sm:text-xs bg-slate-900/80 border border-slate-700 sm:border-2 rounded-lg px-3 sm:px-4 py-2 sm:py-3 file:mr-2 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-3 sm:file:px-4 file:rounded-lg file:border-0 file:text-[10px] sm:file:text-xs file:font-semibold file:bg-gradient-to-r file:from-purple-600 file:to-pink-600 file:text-white hover:file:from-purple-500 hover:file:to-pink-500 file:cursor-pointer transition-all"
               />
               <p className="text-[9px] sm:text-[10px] text-slate-400 mt-1.5 sm:mt-2 flex items-center gap-1">
@@ -402,8 +498,10 @@ const ImportSongPage: React.FC = () => {
               </div>
             )}
           </div>
+          )}
 
           {/* formulario principal */}
+          {(isEditing || showManualForm) && (
           <div className="rounded-lg sm:rounded-2xl border border-slate-700 sm:border-2 hover:border-purple-500/50 bg-gradient-to-br from-slate-900 via-slate-900 to-purple-900/20 p-3 sm:p-6 space-y-3 sm:space-y-5 text-sm transition-all hover:shadow-lg hover:shadow-purple-500/20">
             <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-4">
               <span className="text-xl sm:text-2xl">🎵</span>
@@ -432,6 +530,11 @@ const ImportSongPage: React.FC = () => {
                 <input
                   value={form.author}
                   onChange={handleChange('author')}
+                  onBlur={() => {
+                    const normalized = canonicalizeArtistName(form.author).name
+                    if (!normalized || normalized === form.author) return
+                    setForm(prev => ({ ...prev, author: normalized }))
+                  }}
                   className="w-full rounded-lg bg-slate-900/80 border border-slate-700 sm:border-2 focus:border-purple-500/50 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none transition-all disabled:opacity-50"
                   placeholder="Opcional"
                   disabled={isEditingVersion}
@@ -505,6 +608,7 @@ const ImportSongPage: React.FC = () => {
               </button>
             </div>
           </div>
+          )}
         </>
       )}
     </div>

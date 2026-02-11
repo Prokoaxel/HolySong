@@ -554,9 +554,10 @@ const ChordPopup: React.FC<{
         </div>
         <button
           onClick={onClose}
-          className="text-slate-400 hover:text-slate-100 text-[11px]"
+          className="h-8 w-8 rounded-md border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-slate-100 hover:bg-slate-700 flex items-center justify-center text-lg leading-none"
+          aria-label="Cerrar acorde"
         >
-          ✕
+          ×
         </button>
       </div>
 

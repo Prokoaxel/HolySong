@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../hooks/useAuth'
 import SongViewer from '../components/songs/SongViewerFixed'
+import { cacheSongDetail, readCachedSongDetail } from '../lib/offlineSongs'
 import type { DbSong, DbVersion, Comment } from '../types'
 
 type Instrument = 'guitar' | 'piano' | 'bass'
@@ -34,7 +35,7 @@ const SongPage: React.FC = () => {
   const [folderCustomTranspose, setFolderCustomTranspose] = useState<number>(0)
 
   // Controls lifted for unified stripe
-  const [fontSize, setFontSize] = useState<number>(16)
+  const [fontSize, setFontSize] = useState<number>(14)
   const [transposeSteps, setTransposeSteps] = useState<number>(0)
   const [capo, setCapo] = useState<number>(0)
   const [bpm, setBpm] = useState<number>(80)
@@ -92,11 +93,20 @@ const SongPage: React.FC = () => {
 
         if (songError || !songData) {
           console.error(songError)
+          const cachedSong = readCachedSongDetail(id)
+          if (cachedSong) {
+            setSong(cachedSong)
+            setVersions([])
+            setError('Sin conexión: mostrando la última versión guardada en este dispositivo.')
+            setLoading(false)
+            return
+          }
           setError('No se pudo cargar la canción.')
           setLoading(false)
           return
         }
         setSong(songData as DbSong)
+        cacheSongDetail(songData as DbSong)
 
         const { data: versionData, error: versionError } = await supabase
           .from('song_versions')
@@ -134,7 +144,7 @@ const SongPage: React.FC = () => {
     loadFolders()
   }, [user])
 
-  // Cargar comentarios de la canción FILTRADOS POR VERSIÓN
+  // Cargar comentarios de la canción FILTRADOS POR VERSION
   useEffect(() => {
     const loadComments = async () => {
       if (!id) return
@@ -487,7 +497,7 @@ const SongPage: React.FC = () => {
     if (!user || !id || !commentDraft.trim() || !selectionRange) return
 
     try {
-      // Guardar con la versión actual: 'base' → null, o el ID de la versión
+      // Guardar con la versión actual: 'base' -> null, o el ID de la versión
       const versionToSave = selectedVersionId === 'base' ? null : selectedVersionId
       
       const { data, error } = await supabase
@@ -577,7 +587,7 @@ const SongPage: React.FC = () => {
   if (loading && !song) {
     return (
       <div className="px-8 py-10 text-slate-300 fade-in">
-        Cargando canción…
+        Cargando canción...
       </div>
     )
   }
@@ -589,204 +599,51 @@ const SongPage: React.FC = () => {
       </div>
     )
   }
-
-  // Reusable: contenido del panel izquierdo (usado en desktop y en el modal móvil)
+  // Reusable: contenido del panel izquierdo (usado en desktop y en el modal movil)
   const LeftPanelContent = () => (
     <>
-      {/* Search */}
-      <div className="rounded-xl bg-slate-900/60 border border-slate-800 px-3 py-2">
-        <p className="text-[10px] uppercase tracking-wide text-slate-400 mb-1">Buscar</p>
-        <input
-          type="text"
-          className="w-full rounded-md bg-slate-950/80 border border-slate-700 px-2 py-1 text-xs text-slate-100 outline-none focus:border-teal-400"
-          placeholder="Buscar título..."
-          value={searchText}
-          onChange={e => setSearchText(e.target.value)}
-          onKeyDown={handleSearchKeyDown}
-        />
+      <div className="rounded-lg bg-slate-900/90 border border-slate-700 p-1.5">
+        <div className="grid grid-cols-2 gap-1.5">
+          <button onClick={() => setFontSize(f => Math.max(10, f - 1))} className="h-8 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-semibold transition-all active:scale-95">A-</button>
+          <button onClick={() => setFontSize(f => Math.min(28, f + 1))} className="h-8 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-semibold transition-all active:scale-95">A+</button>
+          <button onClick={() => setVersionsOpen(v => !v)} className="col-span-2 h-6 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[9px] font-semibold tracking-wide transition-all active:scale-95">VERSIONES</button>
+        </div>
       </div>
 
-      {/* Navegación de carpeta */}
-      {folderId && folderSongs.length > 0 && (
-        <div className="rounded-lg bg-gradient-to-br from-purple-900/20 to-pink-900/20 border border-purple-500/40 px-3 py-2.5">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[10px] uppercase tracking-wide text-purple-300 flex items-center gap-1">
-              <span>📂</span>
-              Navegando carpeta
-            </p>
-            <button 
-              onClick={() => navigate(`/app/folders/${folderId}`)}
-              className="text-xs font-medium text-purple-300 hover:text-white transition-all flex items-center gap-1.5 bg-purple-900/40 hover:bg-purple-800/60 px-3 py-1.5 rounded-lg border border-purple-500/40 hover:border-purple-400/60 hover:scale-105"
+      {versionsOpen && (
+        <div className="rounded-lg bg-slate-900/95 border border-slate-700 p-1.5 max-h-44 overflow-auto scroll-dark">
+          <div className="grid gap-1">
+            <button
+              type="button"
+              onClick={() => setSelectedVersionId('base')}
+              className={'w-full text-left rounded-md px-2 py-1.5 border text-[11px] ' + (String(selectedVersionId) === 'base' ? 'border-teal-400 bg-teal-500/10 text-teal-100' : 'border-slate-600 bg-slate-900 text-slate-100 hover:border-slate-500')}
             >
-              <span className="text-sm">↩️</span>
-              Volver
+              Principal
             </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={goPrevInFolder}
-              disabled={currentIndexInFolder <= 0}
-              className="flex-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition-all hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center gap-1"
+            {versions.map(v => (
+              <button
+                key={v.id}
+                onClick={() => setSelectedVersionId(String(v.id))}
+                className={'w-full text-left rounded-md px-2 py-1.5 border text-[11px] truncate ' + (String(selectedVersionId) === String(v.id) ? 'border-teal-400 bg-teal-500/10 text-teal-100' : 'border-slate-600 bg-slate-900 text-slate-100 hover:border-slate-500')}
+              >
+                {v.version_label}
+              </button>
+            ))}
+            <button
+              onClick={handleCreateVersion}
+              disabled={savingVersion}
+              className="w-full rounded-md bg-teal-600 hover:bg-teal-500 disabled:opacity-60 border border-teal-400 text-[11px] text-slate-950 font-semibold py-1.5"
             >
-              <span>⬅️</span>
-              Anterior
-            </button>
-            <span className="text-[10px] text-slate-400">{currentIndexInFolder + 1}/{folderSongs.length}</span>
-            <button 
-              onClick={goNextInFolder}
-              disabled={currentIndexInFolder >= folderSongs.length - 1}
-              className="flex-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition-all hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center gap-1"
-            >
-              Siguiente
-              <span>➡️</span>
+              {savingVersion ? '...' : '+'}
             </button>
           </div>
         </div>
       )}
-
-      {/* Title + actions */}
-      <div className="rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-xs">
-        <p className="text-[10px] uppercase tracking-wide text-teal-200 mb-1">Título</p>
-        <h1 className="text-base font-semibold text-slate-50 truncate mb-1">{currentTitle}</h1>
-        <p className="text-[11px] text-slate-300 truncate">Autor: <span className="text-slate-100">{song.author ?? 'sin autor'}</span></p>
-        <p className="text-[11px] text-slate-300 mt-1">Tono: <span className="text-orange-300 font-semibold">{song.tone ?? '-'}</span></p>
-        <div className="mt-2 flex gap-2">
-          <button onClick={handleEditSong} className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs">Editar</button>
-          <button onClick={handleCreateVersion} disabled={savingVersion} className="px-2 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 disabled:opacity-60 border border-teal-400 text-xs text-slate-950 font-semibold">{savingVersion ? 'Guardando…' : 'Nueva versión'}</button>
-        </div>
-        {/* Estado actual (ayuda visual) */}
-        <div className="mt-2 text-[10px] text-slate-400">
-          Versión seleccionada: <span className="text-slate-200">{String(selectedVersionId)}</span> • Total versiones: <span className="text-slate-200">{versions.length}</span>
-        </div>
-      </div>
-
-      {/* Versions (collapsible) */}
-      <div className="rounded-lg bg-slate-900 border border-slate-700">
-        <button
-          className="w-full flex items-center justify-between px-3 py-2"
-          onClick={() => setVersionsOpen(v => !v)}
-          aria-expanded={versionsOpen}
-        >
-          <p className="text-[11px] uppercase tracking-[0.12em] text-slate-100">Versiones</p>
-          <span className="text-[11px] text-slate-300">{versionsOpen ? 'Ocultar' : 'Mostrar'}</span>
-        </button>
-        {versionsOpen && (
-          <div className="px-3 pb-3">
-            <button type="button" onClick={() => setSelectedVersionId('base')} className={'w-full text-left rounded-lg px-2 py-2 mb-2 border text-xs ' + (String(selectedVersionId) === 'base' ? 'border-teal-400 bg-teal-500/10 text-teal-100' : 'border-slate-600 bg-slate-900 text-slate-100 hover:border-slate-500')}>
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Principal</span>
-                <span className="text-[10px] text-slate-300">{song.tone ?? '-'}</span>
-              </div>
-            </button>
-            <div className="space-y-2 pr-1 min-h-[96px]">
-              {versions.length === 0 && (
-                <p className="text-[11px] text-slate-200">Aún no creaste versiones.</p>
-              )}
-              {versions.map(v => (
-                <button key={v.id} onClick={() => setSelectedVersionId(String(v.id))} className={'w-full text-left rounded-lg px-2 py-2 mb-2 border text-xs ' + (String(selectedVersionId) === String(v.id) ? 'border-teal-400 bg-teal-500/10 text-teal-100' : 'border-slate-600 bg-slate-900 text-slate-100 hover:border-slate-500')}>
-                  <div className="flex justify-between items-center gap-2">
-                    <div>
-                      <p className="text-xs font-medium leading-none">{v.version_label}</p>
-                      <p className="text-[10px] text-slate-200 leading-none">Tono: {v.tone ?? song?.tone ?? '-'}</p>
-                    </div>
-                    <div className="flex gap-1">
-                      <button onClick={e => { e.stopPropagation(); handleEditVersion(v.id) }} className="text-[10px] px-2 py-1 rounded bg-slate-800">Editor</button>
-                      <button onClick={e => { e.stopPropagation(); handleDeleteVersion(v.id) }} className="text-[10px] px-2 py-1 rounded bg-red-700/80 hover:bg-red-600">Eliminar</button>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Controls */}
-      <div className="rounded-xl bg-gradient-to-br from-slate-900/80 via-slate-900/60 to-purple-900/20 border border-slate-700 px-3 py-4 mt-2 text-xs shadow-lg">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-lg">📝</span>
-          <p className="text-[12px] font-bold text-slate-200">Texto</p>
-        </div>
-        <div className="flex items-center gap-2 mb-4">
-          <button onClick={() => setFontSize(f => Math.max(12, f - 1))} className="w-10 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-purple-500/50 flex items-center justify-center transition-all hover:scale-105">A-</button>
-          <button onClick={() => setFontSize(f => Math.min(28, f + 1))} className="w-10 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-purple-500/50 flex items-center justify-center transition-all hover:scale-105">A+</button>
-          <span className="text-[10px] text-slate-400 ml-1">{fontSize}px</span>
-        </div>
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-lg">🎸</span>
-          <p className="text-[12px] font-bold text-slate-200">Instrumento</p>
-        </div>
-        <div className="flex gap-2 mb-4">
-          <button onClick={() => setInstrument('guitar')} className={ 'flex-1 rounded-lg px-2 py-2 border text-[11px] transition-all hover:scale-105 ' + (instrument === 'guitar' ? 'border-teal-400 bg-gradient-to-br from-teal-500/20 to-teal-600/10 text-teal-200 shadow-lg shadow-teal-500/20' : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600') }>🎸 Guitarra</button>
-          <button onClick={() => setInstrument('piano')} className={ 'flex-1 rounded-lg px-2 py-2 border text-[11px] transition-all hover:scale-105 ' + (instrument === 'piano' ? 'border-teal-400 bg-gradient-to-br from-teal-500/20 to-teal-600/10 text-teal-200 shadow-lg shadow-teal-500/20' : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600') }>🎹 Piano</button>
-          <button onClick={() => setInstrument('bass')} className={ 'flex-1 rounded-lg px-2 py-2 border text-[11px] transition-all hover:scale-105 ' + (instrument === 'bass' ? 'border-teal-400 bg-gradient-to-br from-teal-500/20 to-teal-600/10 text-teal-200 shadow-lg shadow-teal-500/20' : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600') }>🎸 Bajo</button>
-        </div>
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-base">🎸</span>
-              <p className="text-[11px] font-semibold text-slate-300">Capo</p>
-            </div>
-            <span className="text-[11px] font-bold text-teal-300">{capo}</span>
-          </div>
-          <input type="range" min={0} max={7} value={capo} onChange={(e)=>setCapo(parseInt(e.target.value))} className="w-full accent-teal-500"/>
-        </div>
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-base">🥁</span>
-            <p className="text-[11px] font-semibold text-slate-300">Metrónomo</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <input type="number" min={40} max={220} value={bpm} onChange={e=>setBpm(Math.min(220, Math.max(40, Number(e.target.value)||80)))} className="w-20 rounded-lg bg-slate-900/80 border-2 border-slate-700 focus:border-purple-500/50 px-3 py-2 text-[11px] text-center font-bold outline-none transition-all"/>
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] text-slate-500 pointer-events-none">BPM</span>
-            </div>
-            <button onClick={()=>setMetronomeOn(on=>!on)} className={ 'flex-1 rounded-lg py-2 text-[11px] font-semibold transition-all hover:scale-105 ' + (metronomeOn ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-slate-900 shadow-lg shadow-teal-500/40' : 'bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600') }>{metronomeOn ? '⏸️ Parar' : '▶️ Iniciar'}</button>
-          </div>
-        </div>
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-base">📜</span>
-              <p className="text-[11px] font-semibold text-slate-300">Autoscroll</p>
-            </div>
-            <span className="text-[11px] font-bold text-teal-300">{autoScrollOn ? scrollSpeed : 'OFF'}</span>
-          </div>
-          <input type="range" min={0} max={4} value={autoScrollOn ? scrollSpeed : 0} onChange={e=>{ const v = Number(e.target.value); if (v===0) setAutoScrollOn(false); else { setScrollSpeed(v); setAutoScrollOn(true) }}} className="w-full accent-teal-500"/>
-        </div>
-        <div className="flex flex-col gap-2 pt-2 border-t border-slate-700">
-          <button 
-            onClick={() => {
-              setCommentMode(!commentMode)
-              if (commentMode) {
-                setShowCommentForm(false)
-                setSelectedText('')
-                setSelectionRange(null)
-              }
-            }} 
-            className={'w-full rounded-lg py-2.5 text-[11px] font-semibold transition-all hover:scale-105 flex items-center justify-center gap-2 ' + (commentMode ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-slate-950 shadow-lg shadow-teal-500/40' : 'bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-purple-500/50')}
-          >
-            {commentMode ? '✓ Modo comentario activo' : '💬 Agregar comentario'}
-          </button>
-          <button onClick={()=>window.print()} className="w-full rounded-lg bg-gradient-to-r from-slate-800 to-slate-800 hover:from-orange-600 hover:to-red-600 border border-slate-700 hover:border-transparent py-2.5 text-[11px] font-semibold transition-all hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2">
-            <span>📄</span> Descargar PDF
-          </button>
-        </div>
-      </div>
     </>
   )
 
   return (
     <div className="h-full overflow-hidden px-0 md:px-6 md:-mt-4 fade-in">
-      {/* Backdrop for mobile controls overlay */}
-      {controlsOpen && (
-        <button
-          className="fixed inset-0 z-40 bg-black/60 md:hidden"
-          aria-label="Cerrar controles"
-          onClick={() => setControlsOpen(false)}
-        />
-      )}
-
       <div className="grid grid-cols-12 gap-3">
         {/* LEFT COLUMN - unified stripe (desktop only) */}
         <div className={`col-span-12 md:col-span-4 lg:col-span-3 no-print hidden md:block`}>
@@ -800,13 +657,14 @@ const SongPage: React.FC = () => {
           <div
             id="print-lyrics"
             ref={lyricsContainerRef}
-            className="md:rounded-xl bg-transparent md:bg-slate-900 border-0 md:border md:border-slate-700 overflow-y-auto h-full md:max-h-screen scroll-dark print-only p-0"
+            className="md:rounded-xl bg-transparent md:bg-slate-900 border-0 md:border md:border-slate-700 overflow-y-visible md:overflow-y-auto h-full md:max-h-screen scroll-dark print-only p-0"
           >
             <SongViewer
             key={`${song.id}-${selectedVersionId}`}
             title={currentTitle}
             tone={currentTone}
             content={currentContent}
+            musicianMode
             onAddToFolder={handleAddToFolder}
             comments={comments}
             commentMode={commentMode}
@@ -838,64 +696,97 @@ const SongPage: React.FC = () => {
             />
           </div>
           {/* Controles flotantes en móvil - renderizados via portal para que sean fixed al viewport */}
-          {!controlsOpen && createPortal(
+          {createPortal(
             <>
               {/* Botón transportador/tono - arriba de todo */}
-              <div className={`md:hidden fixed right-2 top-[77px] z-50 transition-all duration-300 ${transposeOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+              <div className={`md:hidden fixed right-2 top-[68px] z-50 transition-all duration-300 ${transposeOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                 <button
                   onClick={() => setTransposeOpen(!transposeOpen)}
-                  className="w-9 h-9 rounded-full bg-slate-800/90 border border-teal-500/60 text-slate-100 shadow-lg flex items-center justify-center"
+                  className="w-9 h-9 rounded-lg bg-slate-800/70 border border-teal-500/45 text-slate-100 shadow-lg flex items-center justify-center"
                   aria-label="Cambiar tono"
                   title="Cambiar tono"
                 >
-                  🎵
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M10 18a2.25 2.25 0 1 0-2.25-2.25V7.5l7-2v8.25" />
+                    <path d="m16 10.5 2-2 2 2" />
+                    <path d="M18 8.5v7" />
+                    <path d="m16 17.5 2 2 2-2" />
+                  </svg>
                 </button>
               </div>
 
               {/* Panel de transporte expandido */}
-              <div className={`md:hidden fixed right-2 top-[77px] z-50 transition-all duration-300 ${transposeOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
+              <div className={`md:hidden fixed right-2 top-[68px] z-50 transition-all duration-300 ${transposeOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
                 <div className="rounded-xl bg-slate-800/95 border border-teal-500/60 px-2.5 py-2 shadow-xl backdrop-blur-sm w-32">
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-1">
-                      <span className="text-xs">🎵</span>
+                      <span className="inline-flex h-4 w-4 items-center justify-center text-teal-300">
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M10 18a2.25 2.25 0 1 0-2.25-2.25V7.5l7-2v8.25" />
+                          <path d="m16 10.5 2-2 2 2" />
+                          <path d="M18 8.5v7" />
+                          <path d="m16 17.5 2 2 2-2" />
+                        </svg>
+                      </span>
                       <span className="text-[11px] font-bold text-teal-300">{currentTone || song?.tone || 'C'}</span>
                     </div>
-                    <button onClick={() => setTransposeOpen(false)} className="text-slate-400 hover:text-slate-200 text-xs">✕</button>
+                    <button
+                      onClick={() => setTransposeOpen(false)}
+                      className="h-8 w-8 rounded-md border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-slate-100 hover:bg-slate-700 flex items-center justify-center text-lg leading-none"
+                      aria-label="Cerrar transponer"
+                    >
+                      ×
+                    </button>
                   </div>
                   <div className="grid grid-cols-4 gap-1 mb-1.5">
                     {['C','D','E','F','G','A','B'].map(n => (
                       <button key={n} onClick={() => setTransposeSteps(computeStepsTo(n))} className={'rounded py-1 text-[10px] font-bold transition-all active:scale-95 ' + (currentTone === n ? 'bg-teal-400 text-slate-950' : 'bg-slate-700 text-slate-300')}>{n}</button>
                     ))}
-                    <button onClick={() => setTransposeSteps(0)} className="rounded py-1 text-[9px] font-bold bg-slate-700 text-slate-400" title="Reset">↺</button>
+                    <button onClick={() => setTransposeSteps(0)} className="rounded py-1 text-[9px] font-bold bg-slate-700 text-slate-400" title="Reset">R</button>
                   </div>
                   <div className="flex gap-1">
-                    <button onClick={() => setTransposeSteps(s => Math.max(-12, s - 1))} className="flex-1 rounded bg-slate-700 py-1 text-[10px] font-semibold text-slate-300">-½</button>
-                    <button onClick={() => setTransposeSteps(s => Math.min(12, s + 1))} className="flex-1 rounded bg-slate-700 py-1 text-[10px] font-semibold text-slate-300">+½</button>
+                    <button onClick={() => setTransposeSteps(s => Math.max(-12, s - 1))} className="flex-1 rounded bg-slate-700 py-1 text-[10px] font-semibold text-slate-300">-1/2</button>
+                    <button onClick={() => setTransposeSteps(s => Math.min(12, s + 1))} className="flex-1 rounded bg-slate-700 py-1 text-[10px] font-semibold text-slate-300">+1/2</button>
                   </div>
                 </div>
               </div>
 
               {/* Botón engranaje - se empuja hacia abajo cuando transpose está abierto */}
-              <div className={`md:hidden fixed right-2 z-50 transition-all duration-300 ${transposeOpen ? 'top-[227px]' : 'top-[135px]'}`}>
+              <div className={`md:hidden fixed right-2 z-50 transition-all duration-300 ${transposeOpen ? 'top-[266px]' : 'top-[168px]'}`}>
                 <button
-                  onClick={() => setControlsOpen(true)}
-                  className="w-9 h-9 rounded-full bg-slate-800/90 border border-slate-600 text-slate-100 shadow-lg flex items-center justify-center"
+                  onClick={() => setControlsOpen(v => !v)}
+                  className={
+                    'w-9 h-9 rounded-lg text-slate-100 shadow-lg flex items-center justify-center transition-all duration-300 active:scale-95 ' +
+                    (controlsOpen
+                      ? 'opacity-0 scale-110 pointer-events-none bg-slate-700/85 border border-teal-400/70 shadow-teal-500/30'
+                      : 'opacity-100 scale-100 bg-slate-800/70 border border-slate-500/70')
+                  }
                   aria-label="Abrir controles"
                   title="Controles"
                 >
-                  ⚙️
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="3.5" />
+                    <path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9h.1a1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6z" />
+                  </svg>
                 </button>
               </div>
 
               {/* Botón carpeta - se empuja hacia abajo cuando transpose está abierto */}
-              <div className={`md:hidden fixed right-2 z-50 transition-all duration-300 ${transposeOpen ? 'top-[275px]' : 'top-[185px]'}`}>
+              <div className={`md:hidden fixed right-2 z-50 transition-all duration-300 ${transposeOpen ? 'top-[216px]' : 'top-[118px]'}`}>
                 <button
                   onClick={handleAddToFolder}
-                  className="w-9 h-9 rounded-full bg-slate-800/90 border border-purple-500/60 text-slate-100 shadow-lg flex items-center justify-center"
+                  className={
+                    'w-9 h-9 rounded-lg text-slate-100 shadow-lg flex items-center justify-center transition-all duration-300 active:scale-95 ' +
+                    (folderModalOpen
+                      ? 'opacity-0 scale-110 pointer-events-none bg-slate-700/85 border border-purple-400/70 shadow-purple-500/30'
+                      : 'opacity-100 scale-100 bg-slate-800/70 border border-purple-500/45')
+                  }
                   aria-label="Agregar a carpeta"
                   title="Agregar a carpeta"
                 >
-                  📁
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+                  </svg>
                 </button>
               </div>
             </>,
@@ -904,21 +795,23 @@ const SongPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal de controles en móvil (tipo ventana) */}
-      {controlsOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setControlsOpen(false)} />
-          <div className="relative mx-auto mt-20 w-[92%] max-w-md max-h-[78vh] overflow-auto rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-2 border-slate-700 p-3 shadow-2xl">
+      {/* Mini panel de configuracion movil */}
+      <div className={`md:hidden fixed right-2 z-50 origin-top-right transition-all duration-300 ${transposeOpen ? 'top-[266px]' : 'top-[168px]'} ${controlsOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
+          <div className="w-[132px] rounded-xl bg-slate-800/95 border border-slate-500/70 px-1.5 py-1.5 shadow-xl backdrop-blur-sm">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-slate-100">Controles</p>
-              <button onClick={() => setControlsOpen(false)} className="px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 text-[12px]">Cerrar</button>
+              <button
+                onClick={() => setControlsOpen(false)}
+                className="h-8 w-8 rounded-md border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-slate-100 hover:bg-slate-700 flex items-center justify-center text-lg leading-none"
+                aria-label="Cerrar configuracion"
+              >
+                ×
+              </button>
             </div>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
               <LeftPanelContent />
             </div>
           </div>
         </div>
-      )}
 
       {/* Modal para agregar comentario - Diseño mejorado */}
       {showCommentForm && (
@@ -1038,3 +931,5 @@ const SongPage: React.FC = () => {
 }
 
 export default SongPage
+
+

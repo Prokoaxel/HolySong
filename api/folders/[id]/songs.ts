@@ -1,86 +1,86 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { supabaseAdmin } from '../../_lib/supabaseAdminClient'
 
-// Handler for POST (add song) and DELETE (remove song) for folder songs
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const {
-    query: { id },
-    method,
-  } = req
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
-  if (!id || typeof id !== 'string') {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const folderId = req.query.id
+  const { method } = req
+
+  if (method !== 'POST' && method !== 'DELETE') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  if (!folderId || typeof folderId !== 'string') {
     return res.status(400).json({ error: 'Missing folder id' })
   }
-
-  // Authentication: expect Authorization: Bearer <access_token>
-  const authHeader = req.headers['authorization'] || req.headers['Authorization']
-  const token = typeof authHeader === 'string' ? authHeader.replace('Bearer ', '') : null
-  let userId: string | null = null
-
-  if (token) {
-    const { data } = await supabaseAdmin.auth.getUser(token)
-    userId = data?.user?.id ?? null
+  if (!UUID_REGEX.test(folderId)) {
+    return res.status(400).json({ error: 'Invalid folder id' })
   }
 
-  // Verify folder owner matches user
-  if (!userId) {
+  const authHeader = req.headers.authorization
+  const tokenMatch = typeof authHeader === 'string' ? authHeader.match(/^Bearer\s+(.+)$/i) : null
+  const token = tokenMatch?.[1]?.trim() || null
+  if (!token) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
+
+  const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token)
+  if (authError || !authData.user) {
+    return res.status(401).json({ error: 'Invalid token' })
+  }
+  const userId = authData.user.id
 
   const { data: folderData, error: folderErr } = await supabaseAdmin
     .from('folders')
     .select('id, owner_id')
-    .eq('id', id)
+    .eq('id', folderId)
     .maybeSingle()
 
   if (folderErr) {
     console.error('[folders] fetch folder error:', folderErr)
-    return res.status(500).json({ error: 'Failed fetching folder', details: folderErr.message })
+    return res.status(500).json({ error: 'Failed fetching folder' })
   }
-
   if (!folderData || folderData.owner_id !== userId) {
     return res.status(403).json({ error: 'Forbidden' })
   }
 
   if (method === 'POST') {
-    // body: { song_id: string }
-    const { song_id } = req.body
-    if (!song_id) return res.status(400).json({ error: 'Missing song_id' })
+    const songId = req.body?.song_id
+    if (!songId || typeof songId !== 'string') {
+      return res.status(400).json({ error: 'Missing song_id' })
+    }
+    if (!UUID_REGEX.test(songId)) {
+      return res.status(400).json({ error: 'Invalid song_id' })
+    }
 
-    const { error } = await supabaseAdmin
-      .from('folder_songs')
-      .insert({ folder_id: id, song_id })
-
+    const { error } = await supabaseAdmin.from('folder_songs').insert({ folder_id: folderId, song_id: songId })
     if (error) {
-      // Si es duplicado (ya existía), lo consideramos éxito idempotente
-      const code = (error as any)?.code || (error as any)?.hint || ''
+      const code = (error as any)?.code || ''
       console.error('[folders] insert error:', error)
       if (code === '23505') {
         return res.status(200).json({ success: true, info: 'already exists' })
       }
-      return res.status(500).json({ error: 'Error inserting song to folder', details: error.message })
+      return res.status(500).json({ error: 'Error inserting song to folder' })
     }
 
     return res.status(200).json({ success: true })
   }
 
-  if (method === 'DELETE') {
-    // expecting /api/folders/[id]/songs?songId=...
-    const songId = req.query.songId as string | undefined
-    if (!songId) return res.status(400).json({ error: 'Missing songId query' })
-
-    const { error } = await supabaseAdmin
-      .from('folder_songs')
-      .delete()
-      .match({ folder_id: id, song_id: songId })
-
-    if (error) {
-      console.error('[folders] remove error:', error)
-      return res.status(500).json({ error: 'Error removing song from folder', details: error.message })
-    }
-
-    return res.status(200).json({ success: true })
+  const songId = req.query.songId
+  if (!songId || typeof songId !== 'string') {
+    return res.status(400).json({ error: 'Missing songId query' })
+  }
+  if (!UUID_REGEX.test(songId)) {
+    return res.status(400).json({ error: 'Invalid songId query' })
   }
 
-  return res.status(405).json({ error: 'Method not allowed' })
+  const { error } = await supabaseAdmin.from('folder_songs').delete().match({ folder_id: folderId, song_id: songId })
+  if (error) {
+    console.error('[folders] remove error:', error)
+    return res.status(500).json({ error: 'Error removing song from folder' })
+  }
+
+  return res.status(200).json({ success: true })
 }

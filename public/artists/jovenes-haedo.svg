@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-label="Jovenes Haedo">
+  <rect width="640" height="640" fill="#000"/>
+  <g fill="none" stroke="#f3f4f6" stroke-width="18" stroke-linecap="round">
+    <path d="M120 160a240 240 0 0 1 400 0"/>
+    <path d="M130 490a240 240 0 0 0 380 0"/>
+  </g>
+  <text x="320" y="120" text-anchor="middle" fill="#f3f4f6" font-family="Segoe UI, Arial, sans-serif" font-size="58" letter-spacing="6">JOVENES</text>
+  <text x="320" y="585" text-anchor="middle" fill="#f3f4f6" font-family="Segoe UI, Arial, sans-serif" font-size="58" letter-spacing="6">HAEDO</text>
+  <g fill="#55c7e5">
+    <circle cx="320" cy="220" r="24"/>
+    <rect x="309" y="238" width="22" height="138" rx="10"/>
+    <path d="M220 332c0 62 44 112 100 112s100-50 100-112h-24c0 48-34 88-76 88s-76-40-76-88z"/>
+    <path d="M220 332c-24 0-42 18-42 40s18 40 42 40h24v-80zm200 0h-24v80h24c24 0 42-18 42-40s-18-40-42-40z"/>
+  </g>
+  <g fill="#55c7e5" opacity="0.95">
+    <path d="M120 280c18-18 40-18 58 0 18 18 40 18 58 0v22c-18 18-40 18-58 0-18-18-40-18-58 0z"/>
+    <path d="M120 322c18-18 40-18 58 0 18 18 40 18 58 0v22c-18 18-40 18-58 0-18-18-40-18-58 0z"/>
+    <path d="M120 364c18-18 40-18 58 0 18 18 40 18 58 0v22c-18 18-40 18-58 0-18-18-40-18-58 0z"/>
+    <path d="M404 280c18-18 40-18 58 0 18 18 40 18 58 0v22c-18 18-40 18-58 0-18-18-40-18-58 0z"/>
+    <path d="M404 322c18-18 40-18 58 0 18 18 40 18 58 0v22c-18 18-40 18-58 0-18-18-40-18-58 0z"/>
+    <path d="M404 364c18-18 40-18 58 0 18 18 40 18 58 0v22c-18 18-40 18-58 0-18-18-40-18-58 0z"/>
+  </g>
+</svg>

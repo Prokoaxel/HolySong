@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Preview Musico + HolySong</title>
+    <style>
+      :root {
+        --bg: #020617;
+        --panel: #1f2937;
+        --panel-border: #4b5563;
+        --text: #f8fafc;
+        --chord: #ef6c00;
+        --muted: #9ca3af;
+        --font-size: 16px;
+        --line-height: 1.3;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Courier New", Courier, monospace;
+        background:
+          radial-gradient(700px 400px at -10% -10%, rgba(168, 85, 247, 0.2), transparent 55%),
+          radial-gradient(700px 450px at 110% 110%, rgba(20, 184, 166, 0.18), transparent 55%),
+          var(--bg);
+        color: #e2e8f0;
+      }
+      .app {
+        max-width: 980px;
+        margin: 0 auto;
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr auto auto;
+      }
+      .top {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        border-bottom: 2px solid rgba(168, 85, 247, 0.3);
+        background: linear-gradient(90deg, rgba(2, 6, 23, 0.96), rgba(49, 20, 74, 0.48), rgba(2, 6, 23, 0.96));
+        backdrop-filter: blur(8px);
+      }
+      .top-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px;
+      }
+      .title {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        font-size: 15px;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        background: linear-gradient(90deg, #c4b5fd, #f0abfc, #5eead4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .sub {
+        margin-top: 2px;
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        font-size: 11px;
+        color: #cbd5e1;
+      }
+      .chip {
+        border: 1px solid rgba(20, 184, 166, 0.6);
+        border-radius: 999px;
+        background: rgba(20, 184, 166, 0.15);
+        color: #99f6e4;
+        padding: 4px 8px;
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .theme-btn {
+        border: 1px solid rgba(148, 163, 184, 0.45);
+        border-radius: 8px;
+        background: rgba(15, 23, 42, 0.9);
+        color: #e2e8f0;
+        min-height: 28px;
+        padding: 4px 8px;
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .float-rail {
+        position: fixed;
+        right: 8px;
+        top: 74px;
+        z-index: 35;
+        display: grid;
+        gap: 7px;
+      }
+      .float-btn {
+        width: 62px;
+        min-height: 54px;
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.45);
+        background: rgba(15, 23, 42, 0.95);
+        color: #e2e8f0;
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        font-size: 10px;
+        font-weight: 800;
+        line-height: 1.15;
+      }
+      .float-btn.active {
+        border-color: rgba(20, 184, 166, 0.75);
+        background: rgba(20, 184, 166, 0.25);
+        color: #99f6e4;
+      }
+
+      .transpose-panel {
+        position: fixed;
+        right: 76px;
+        top: 74px;
+        z-index: 34;
+        width: 124px;
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.45);
+        background: rgba(15, 23, 42, 0.96);
+        padding: 7px;
+        display: none;
+        gap: 6px;
+      }
+      .transpose-panel.open { display: grid; }
+      .transpose-panel button, .transpose-panel .value {
+        min-height: 36px;
+        border-radius: 8px;
+        border: 1px solid rgba(148, 163, 184, 0.45);
+        background: rgba(30, 41, 59, 0.92);
+        color: #f8fafc;
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .transpose-panel .value { display: grid; place-items: center; color: #99f6e4; }
+      .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 39;
+        display: none;
+      }
+      .overlay.open { display: block; }
+      .sheet-modal {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 82px;
+        width: min(95vw, 520px);
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.45);
+        background: rgba(15, 23, 42, 0.98);
+        color: #e2e8f0;
+        z-index: 40;
+        display: none;
+      }
+      .sheet-modal.open { display: block; }
+      .sheet-header {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        font-weight: 800;
+        font-size: 13px;
+      }
+      .sheet-body { padding: 10px 12px; font-family: "Segoe UI", Tahoma, sans-serif; font-size: 12px; }
+      .line { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+      .line button {
+        min-height: 34px;
+        min-width: 56px;
+        border-radius: 8px;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        background: rgba(30, 41, 59, 0.92);
+        color: #f8fafc;
+        font-weight: 700;
+      }
+      .line input[type="range"] { width: 100%; }
+      .folders { display: grid; gap: 6px; margin-top: 6px; }
+      .folder-item {
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 8px;
+        padding: 8px;
+        background: rgba(30, 41, 59, 0.65);
+      }
+      .folder-create {
+        margin-top: 8px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 6px;
+      }
+      .folder-create input {
+        border-radius: 8px;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        background: rgba(30, 41, 59, 0.92);
+        color: #f8fafc;
+        padding: 8px;
+      }
+      .folder-create button {
+        border-radius: 8px;
+        border: 1px solid rgba(20, 184, 166, 0.6);
+        background: rgba(20, 184, 166, 0.25);
+        color: #99f6e4;
+        padding: 8px 10px;
+        font-weight: 700;
+      }
+
+      .sheet-wrap { padding: 8px 78px 10px 8px; }
+      .sheet {
+        border: 2px solid var(--panel-border);
+        border-radius: 10px;
+        background: var(--panel);
+        color: var(--text);
+        padding: 10px 10px 84px;
+        min-height: calc(100vh - 240px);
+      }
+      .song {
+        margin: 0;
+        white-space: pre;
+        overflow-x: auto;
+        font-size: var(--font-size);
+        line-height: var(--line-height);
+      }
+      .label { font-weight: 700; }
+      .ch { color: var(--chord); font-weight: 700; }
+
+      .app-nav {
+        position: sticky;
+        bottom: 0;
+        z-index: 40;
+        border-top: 4px solid rgba(20, 184, 166, 0.6);
+        background: linear-gradient(90deg, rgba(2, 6, 23, 0.98), rgba(49, 20, 74, 0.52), rgba(2, 6, 23, 0.98));
+        backdrop-filter: blur(8px);
+      }
+      .app-nav-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+      }
+      .nav-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        min-width: 62px;
+        border-radius: 10px;
+        padding: 6px 4px;
+        color: #94a3b8;
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        font-size: 9px;
+        font-weight: 800;
+      }
+      .nav-btn.active {
+        color: #99f6e4;
+        background: rgba(20, 184, 166, 0.2);
+        box-shadow: 0 0 16px rgba(20, 184, 166, 0.3);
+      }
+      .nav-btn .icon { font-size: 24px; line-height: 1; }
+      .foot-note {
+        text-align: center;
+        color: var(--muted);
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        font-size: 10px;
+        padding: 6px 0 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="top">
+        <div class="top-row">
+          <div>
+            <p class="title">HolySong - Bondad de Dios</p>
+            <div class="sub" id="metaSub">Tono actual: G (+0) | Capo: 2 | Carpeta: Domingo AM</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button class="theme-btn" id="themeBtn">Fondo</button>
+            <span class="chip">LIVE</span>
+          </div>
+        </div>
+      </header>
+
+      <aside class="float-rail">
+        <button class="float-btn" id="transposeBtn">Transp</button>
+        <button class="float-btn" id="settingsBtn">Ajustes</button>
+        <button class="float-btn" id="folderBtn">Carpeta</button>
+      </aside>
+
+      <div class="transpose-panel" id="transposePanel">
+        <div class="row2">
+          <button id="tDown">-1/2</button>
+          <button id="tUp">+1/2</button>
+        </div>
+        <div class="value" id="tVal">+0</div>
+        <button id="tReset">Reset</button>
+      </div>
+
+      <div class="overlay" id="overlay"></div>
+      <section class="sheet-modal" id="settingsModal">
+        <div class="sheet-header">Ajustes rapidos</div>
+        <div class="sheet-body">
+          <div class="line">
+            <span>Tamano letra</span>
+            <div>
+              <button id="fDown">A-</button>
+              <button id="fUp">A+</button>
+            </div>
+          </div>
+          <div class="line">
+            <span>Capo</span>
+            <input type="range" id="capoRange" min="0" max="7" value="2" />
+          </div>
+          <div class="line">
+            <span>Auto-scroll</span>
+            <button id="scrollToggle">OFF</button>
+          </div>
+          <div class="line">
+            <span>Velocidad</span>
+            <input type="range" id="speedRange" min="1" max="4" value="1" />
+          </div>
+        </div>
+      </section>
+
+      <section class="sheet-modal" id="folderModal">
+        <div class="sheet-header">Carpetas</div>
+        <div class="sheet-body">
+          <div class="folders">
+            <div class="folder-item">Domingo AM</div>
+            <div class="folder-item">Jueves ensayo</div>
+            <div class="folder-item">Adoracion especial</div>
+          </div>
+          <div class="folder-create">
+            <input id="newFolderInput" placeholder="Nueva carpeta..." />
+            <button id="createFolder">Crear</button>
+          </div>
+          <div class="line" style="margin-top:8px; margin-bottom:0;">
+            <span>Cancion actual</span>
+            <button id="saveToFolder">Guardar</button>
+          </div>
+        </div>
+      </section>
+
+      <main class="sheet-wrap">
+        <article class="sheet">
+          <pre class="song">
+<span class="label">[Intro]</span> <span class="ch">G  G4  G  G4  G</span>
+
+<span class="label">[Primera Parte]</span>
+
+        <span class="ch">G</span>
+Te amo Dios
+      <span class="ch">C9</span>         <span class="ch">G</span>
+Tu bondad nunca me falla
+   <span class="ch">D/F#  Em7</span>       <span class="ch">C9</span>    <span class="ch">D</span>
+Y mis dias, en tus manos estan
+                     <span class="ch">Em7  C9</span>
+Desde el momento que despierto
+        <span class="ch">G</span>   <span class="ch">D/F#  Em7</span>
+Hasta el anochecer
+      <span class="ch">C9</span>      <span class="ch">D2</span>        <span class="ch">G</span>
+Yo cantare de la bondad de Dios
+          </pre>
+        </article>
+      </main>
+
+      <nav class="app-nav">
+        <div class="app-nav-row">
+          <div class="nav-btn"><div class="icon">🏠</div><div>Inicio</div></div>
+          <div class="nav-btn"><div class="icon">📥</div><div>Importar</div></div>
+          <div class="nav-btn active"><div class="icon">📚</div><div>Biblioteca</div></div>
+          <div class="nav-btn"><div class="icon">📁</div><div>Carpetas</div></div>
+          <div class="nav-btn"><div class="icon">🎸</div><div>Live</div></div>
+        </div>
+      </nav>
+      <div class="foot-note">Preview funcional: 3 botones rapidos como SongPage</div>
+    </div>
+
+    <script>
+      const root = document.documentElement;
+      const overlay = document.getElementById("overlay");
+      const transposeBtn = document.getElementById("transposeBtn");
+      const settingsBtn = document.getElementById("settingsBtn");
+      const folderBtn = document.getElementById("folderBtn");
+      const transposePanel = document.getElementById("transposePanel");
+      const settingsModal = document.getElementById("settingsModal");
+      const folderModal = document.getElementById("folderModal");
+      const metaSub = document.getElementById("metaSub");
+      const tVal = document.getElementById("tVal");
+
+      let font = 16;
+      let tr = 0;
+      let capo = 2;
+      let scrollOn = false;
+      let themeIndex = 0;
+      const themes = [
+        { panel: "#1f2937", border: "#4b5563", text: "#f8fafc", name: "Oscuro" },
+        { panel: "#cdc7bb", border: "#8d8576", text: "#101010", name: "Beige" },
+        { panel: "#adb4bc", border: "#6b7280", text: "#0f172a", name: "Gris" },
+      ];
+
+      const fmt = (n) => (n > 0 ? `+${n}` : `${n}`);
+      const refreshMeta = () => {
+        metaSub.textContent = `Tono actual: G (${fmt(tr)}) | Capo: ${capo} | Carpeta: Domingo AM`;
+      };
+      const applyTheme = () => {
+        const t = themes[themeIndex];
+        root.style.setProperty("--panel", t.panel);
+        root.style.setProperty("--panel-border", t.border);
+        root.style.setProperty("--text", t.text);
+        document.getElementById("themeBtn").textContent = `Fondo: ${t.name}`;
+      };
+      const closeAll = () => {
+        transposePanel.classList.remove("open");
+        settingsModal.classList.remove("open");
+        folderModal.classList.remove("open");
+        overlay.classList.remove("open");
+        transposeBtn.classList.remove("active");
+        settingsBtn.classList.remove("active");
+        folderBtn.classList.remove("active");
+      };
+
+      transposeBtn.addEventListener("click", () => {
+        const open = !transposePanel.classList.contains("open");
+        closeAll();
+        if (open) {
+          transposePanel.classList.add("open");
+          transposeBtn.classList.add("active");
+        }
+      });
+      settingsBtn.addEventListener("click", () => {
+        const open = !settingsModal.classList.contains("open");
+        closeAll();
+        if (open) {
+          settingsModal.classList.add("open");
+          overlay.classList.add("open");
+          settingsBtn.classList.add("active");
+        }
+      });
+      folderBtn.addEventListener("click", () => {
+        const open = !folderModal.classList.contains("open");
+        closeAll();
+        if (open) {
+          folderModal.classList.add("open");
+          overlay.classList.add("open");
+          folderBtn.classList.add("active");
+        }
+      });
+      overlay.addEventListener("click", closeAll);
+      document.getElementById("themeBtn").addEventListener("click", () => {
+        themeIndex = (themeIndex + 1) % themes.length;
+        applyTheme();
+      });
+
+      document.getElementById("tDown").addEventListener("click", () => {
+        tr -= 1; tVal.textContent = fmt(tr); refreshMeta();
+      });
+      document.getElementById("tUp").addEventListener("click", () => {
+        tr += 1; tVal.textContent = fmt(tr); refreshMeta();
+      });
+      document.getElementById("tReset").addEventListener("click", () => {
+        tr = 0; tVal.textContent = fmt(tr); refreshMeta();
+      });
+
+      document.getElementById("fDown").addEventListener("click", () => {
+        font = Math.max(14, font - 1);
+        root.style.setProperty("--font-size", `${font}px`);
+      });
+      document.getElementById("fUp").addEventListener("click", () => {
+        font = Math.min(42, font + 1);
+        root.style.setProperty("--font-size", `${font}px`);
+      });
+      document.getElementById("capoRange").addEventListener("input", (e) => {
+        capo = Number(e.target.value);
+        refreshMeta();
+      });
+      document.getElementById("scrollToggle").addEventListener("click", (e) => {
+        scrollOn = !scrollOn;
+        e.target.textContent = scrollOn ? "ON" : "OFF";
+      });
+      document.getElementById("createFolder").addEventListener("click", () => {
+        const input = document.getElementById("newFolderInput");
+        if (!input.value.trim()) return;
+        alert(`Carpeta creada: ${input.value.trim()}`);
+        input.value = "";
+      });
+      document.getElementById("saveToFolder").addEventListener("click", () => {
+        alert("Cancion guardada en carpeta (demo).");
+      });
+
+      applyTheme();
+    </script>
+  </body>
+</html>

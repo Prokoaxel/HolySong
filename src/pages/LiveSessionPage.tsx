@@ -24,6 +24,10 @@ const LiveSessionPage: React.FC = () => {
   const [joinCode, setJoinCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [viewerFontSize, setViewerFontSize] = useState(14)
+  const [autoScroll, setAutoScroll] = useState(false)
+  const [scrollSpeed, setScrollSpeed] = useState(1.2)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const [songs, setSongs] = useState<SongWithTranspose[]>([])
   const [currentSong, setCurrentSong] = useState<SongWithTranspose | null>(null)
@@ -253,6 +257,20 @@ const LiveSessionPage: React.FC = () => {
     }
   }
 
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen()
+        setIsFullscreen(true)
+      } else {
+        await document.exitFullscreen()
+        setIsFullscreen(false)
+      }
+    } catch (err) {
+      console.error('Fullscreen error', err)
+    }
+  }
+
   const createSession = async () => {
     if (!user) {
       alert('Necesitás estar logueado para crear una sala.')
@@ -376,6 +394,54 @@ const LiveSessionPage: React.FC = () => {
     const next = songs[idx + 1]
     updateSession({ current_song: next.id as any })
   }
+
+  useEffect(() => {
+    const onFullscreenChange = () => setIsFullscreen(Boolean(document.fullscreenElement))
+    document.addEventListener('fullscreenchange', onFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange)
+  }, [])
+
+  useEffect(() => {
+    if (!session || role === 'none') return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      const tag = target?.tagName?.toLowerCase()
+      const typing = tag === 'input' || tag === 'textarea' || target?.isContentEditable
+      if (typing) return
+
+      if (event.key === 'f') {
+        event.preventDefault()
+        void toggleFullscreen()
+        return
+      }
+
+      if (event.key === '=' || event.key === '+') {
+        event.preventDefault()
+        setViewerFontSize(v => Math.min(28, v + 1))
+        return
+      }
+      if (event.key === '-') {
+        event.preventDefault()
+        setViewerFontSize(v => Math.max(10, v - 1))
+        return
+      }
+
+      if (!isAdmin) return
+
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault()
+        goToPrevSong()
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault()
+        goToNextSong()
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [session, role, isAdmin, songs, currentSong])
 
   // Agregar canción a la lista (temporal o carpeta)
   const addSongToList = async (song: Song) => {
@@ -526,6 +592,45 @@ const LiveSessionPage: React.FC = () => {
         >
           <span className="text-xs sm:text-sm">🚪</span>
           <span className="hidden sm:inline text-[10px] sm:text-xs font-semibold text-red-300">Salir</span>
+        </button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg border border-slate-800 bg-slate-900/70 text-[11px] sm:text-xs">
+        <p className="text-slate-400">Atajos: F pantalla completa, +/- zoom, flechas para navegar.</p>
+        <button
+          onClick={() => setViewerFontSize(v => Math.max(10, v - 1))}
+          className="px-2 py-1 rounded border border-slate-700 hover:border-teal-400/70 bg-slate-900"
+        >
+          A-
+        </button>
+        <span className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-200">{viewerFontSize}px</span>
+        <button
+          onClick={() => setViewerFontSize(v => Math.min(28, v + 1))}
+          className="px-2 py-1 rounded border border-slate-700 hover:border-teal-400/70 bg-slate-900"
+        >
+          A+
+        </button>
+        <button
+          onClick={() => setAutoScroll(v => !v)}
+          className={`px-2 py-1 rounded border ${autoScroll ? 'border-teal-400 text-teal-300' : 'border-slate-700 text-slate-300'} bg-slate-900`}
+        >
+          Autoscroll {autoScroll ? 'ON' : 'OFF'}
+        </button>
+        <input
+          type="range"
+          min={0.5}
+          max={3}
+          step={0.1}
+          value={scrollSpeed}
+          onChange={e => setScrollSpeed(Number(e.target.value))}
+          className="w-24 accent-teal-400"
+          aria-label="Velocidad de autoscroll"
+        />
+        <button
+          onClick={toggleFullscreen}
+          className="px-2 py-1 rounded border border-slate-700 hover:border-teal-400/70 bg-slate-900"
+        >
+          {isFullscreen ? 'Salir pantalla completa' : 'Pantalla completa'}
         </button>
       </div>
 
@@ -730,8 +835,12 @@ const LiveSessionPage: React.FC = () => {
                 title={currentSong.title}
                 tone={currentSong.tone || ''}
                 content={currentSong.content || ''}
+                musicianMode
                 externalTranspose={session.transpose + (currentSong.transposeCustom || 0)}
                 externalCapo={session.capo}
+                externalFontSize={viewerFontSize}
+                autoScroll={autoScroll}
+                autoScrollSpeed={scrollSpeed}
               />
             </>
           ) : (
@@ -789,7 +898,13 @@ const LiveSessionPage: React.FC = () => {
                 <span>🎵</span>
                 Canción actual
               </h2>
-              <button onClick={() => setControlPanelOpen(false)} className="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-all">✕</button>
+              <button
+                onClick={() => setControlPanelOpen(false)}
+                className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 flex items-center justify-center text-lg leading-none transition-all"
+                aria-label="Cerrar panel"
+              >
+                ×
+              </button>
             </div>
             
             {isAdmin ? (
@@ -948,9 +1063,10 @@ const LiveSessionPage: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setShowAddSongModal(false)}
-                  className="text-2xl hover:text-red-400 transition-colors"
+                  className="h-9 w-9 rounded-lg border border-slate-600 bg-slate-800/80 text-slate-200 hover:text-red-300 hover:border-red-500/50 transition-colors flex items-center justify-center text-xl leading-none"
+                  aria-label="Cerrar buscador"
                 >
-                  ✕
+                  ×
                 </button>
               </div>
 
