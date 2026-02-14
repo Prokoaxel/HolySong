@@ -37,10 +37,17 @@ const KNOWN_ARTISTS = [
   'TOMATULUGAR',
   'UPPERROOM',
   'Vida Nueva Music',
+  'Andrea Francisco',
+  'Majo Solis',
+  'Living',
+  'Generacion 12',
+  'Julio Melgar',
+  'Lucas Conslie',
   'John Newton',
   'Carl Boberg',
   'Martin Luther',
   'Traditional',
+  'Coritos',
 ]
 
 const ARTIST_ALIASES: Record<string, string> = {
@@ -90,6 +97,25 @@ const ARTIST_ALIASES: Record<string, string> = {
   'tomatulugar': 'TOMATULUGAR',
   'upper room': 'UPPERROOM',
   'vida nueva music': 'Vida Nueva Music',
+  'vida nueva': 'Vida Nueva Music',
+  'vida nueva worship': 'Vida Nueva Music',
+  'andrea francisco': 'Andrea Francisco',
+  'andrea fransisco': 'Andrea Francisco',
+  'majo solis': 'Majo Solis',
+  'majo solís': 'Majo Solis',
+  living: 'Living',
+  'living worship': 'Living',
+  'the living': 'Living',
+  'generacion 12': 'Generacion 12',
+  'generacion12': 'Generacion 12',
+  'generacion doce': 'Generacion 12',
+  'julio melgar': 'Julio Melgar',
+  'julio melagr': 'Julio Melgar',
+  'lucas conslie': 'Lucas Conslie',
+  'lucas consley': 'Lucas Conslie',
+  'lucas consli': 'Lucas Conslie',
+  coritos: 'Coritos',
+  'corito': 'Coritos',
 }
 
 const PRESET_ARTIST_IMAGES: Record<string, string> = {
@@ -131,6 +157,7 @@ const PRESET_ARTIST_IMAGES: Record<string, string> = {
   'TOMATULUGAR': 'https://cdn-images.dzcdn.net/images/artist/5da36b28915a452033cb97ac33c050de/250x250-000000-80-0-0.jpg',
   'UPPERROOM': 'https://cdn-images.dzcdn.net/images/artist/c2f48a217e52da96f284e4095cd75404/250x250-000000-80-0-0.jpg',
   'Vida Nueva Music': 'https://cdn-images.dzcdn.net/images/artist/728b707f8032f6efcf3fed3c84c73330/250x250-000000-80-0-0.jpg',
+  'Coritos': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFQkPLtjrJKDZg4Mn32zA90Dm5RgW7Whoizg&s',
 }
 
 const IMAGE_CACHE_KEY = 'holysong.artistImages.v1'
@@ -248,6 +275,46 @@ const writeLocalImageCache = (cache: Record<string, string>) => {
   }
 }
 
+const makeFallbackAvatar = (_name: string) =>
+  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRb8yhWke0y3EuLH3PzmDLBA0o6PqAnkLPhlw&s'
+
+const fetchFromDeezer = async (name: string): Promise<string | null> => {
+  try {
+    const url = `https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}`
+    const res = await fetch(url)
+    if (!res.ok) return null
+
+    const payload = await res.json()
+    const items = Array.isArray(payload?.data) ? payload.data : []
+    if (items.length === 0) return null
+
+    const normalizedTarget = normalize(name)
+    const exact = items.find((it: any) => normalize(String(it?.name || '')) === normalizedTarget)
+    const picked = exact ?? items[0]
+    const image = picked?.picture_medium || picked?.picture_small || picked?.picture_big || null
+    if (!image || typeof image !== 'string') return null
+    return image
+  } catch {
+    return null
+  }
+}
+
+const fetchFromITunes = async (name: string): Promise<string | null> => {
+  try {
+    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=musicArtist&limit=1`
+    const res = await fetch(url)
+    if (!res.ok) return null
+    const payload = await res.json()
+    const items = Array.isArray(payload?.results) ? payload.results : []
+    if (!items.length) return null
+    const artwork = items[0]?.artworkUrl100 || items[0]?.artworkUrl60 || null
+    if (!artwork || typeof artwork !== 'string') return null
+    return artwork.replace('100x100bb', '512x512bb')
+  } catch {
+    return null
+  }
+}
+
 export const resolveArtistImageUrl = async (input: string): Promise<string | null> => {
   const { name } = canonicalizeArtistName(input)
   if (!name) return null
@@ -272,20 +339,7 @@ export const resolveArtistImageUrl = async (input: string): Promise<string | nul
 
   const req = (async () => {
     try {
-      const url = `https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}`
-      const res = await fetch(url)
-      if (!res.ok) return null
-
-      const payload = await res.json()
-      const items = Array.isArray(payload?.data) ? payload.data : []
-      if (items.length === 0) return null
-
-      const normalizedTarget = normalize(name)
-      const exact = items.find((it: any) => normalize(String(it?.name || '')) === normalizedTarget)
-      const picked = exact ?? items[0]
-      const image = picked?.picture_medium || picked?.picture_small || picked?.picture_big || null
-      if (!image || typeof image !== 'string') return null
-
+      const image = (await fetchFromDeezer(name)) || (await fetchFromITunes(name)) || makeFallbackAvatar(name)
       imageMemoryCache.set(name, image)
       const merged = { ...local, [name]: image }
       writeLocalImageCache(merged)

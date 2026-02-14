@@ -260,21 +260,45 @@ const SongViewerFixed: React.FC<SongViewerProps> = ({
   // Swipe detection
   const touchStartX = useRef<number>(0)
   const touchStartY = useRef<number>(0)
+  const touchLastX = useRef<number>(0)
+  const touchLastY = useRef<number>(0)
+  const swipeBlockedByScroll = useRef<boolean>(false)
+  const touchStartedOnInteractive = useRef<boolean>(false)
   
   const handleTouchStart = (e: React.TouchEvent) => {
+    const target = e.target as HTMLElement | null
+    touchStartedOnInteractive.current = !!target?.closest('button, input, textarea, select, a, [role="button"]')
     touchStartX.current = e.touches[0].clientX
     touchStartY.current = e.touches[0].clientY
+    touchLastX.current = e.touches[0].clientX
+    touchLastY.current = e.touches[0].clientY
+    swipeBlockedByScroll.current = false
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchLastX.current = e.touches[0].clientX
+    touchLastY.current = e.touches[0].clientY
+
+    const deltaX = touchLastX.current - touchStartX.current
+    const deltaY = touchLastY.current - touchStartY.current
+    // Si predomina el desplazamiento vertical, bloquear swipe lateral.
+    if (Math.abs(deltaY) > 14 && Math.abs(deltaY) > Math.abs(deltaX)) {
+      swipeBlockedByScroll.current = true
+    }
   }
   
   const handleTouchEnd = (e: React.TouchEvent) => {
-    const touchEndX = e.changedTouches[0].clientX
-    const touchEndY = e.changedTouches[0].clientY
+    if (touchStartedOnInteractive.current || swipeBlockedByScroll.current) {
+      return
+    }
+
+    const touchEndX = touchLastX.current || e.changedTouches[0].clientX
+    const touchEndY = touchLastY.current || e.changedTouches[0].clientY
     const deltaX = touchEndX - touchStartX.current
     const deltaY = touchEndY - touchStartY.current
     
-    // Horizontal swipe threshold: 80px
-    // Ensure horizontal movement is dominant (deltaX > deltaY)
-    if (Math.abs(deltaX) > 80 && Math.abs(deltaX) > Math.abs(deltaY)) {
+    // Requiere desplazamiento horizontal claro para evitar falsos positivos al scrollear.
+    if (Math.abs(deltaX) > 95 && Math.abs(deltaY) < 36 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
       if (deltaX > 0 && onSwipePrev) {
         // Swipe right = previous song
         onSwipePrev()
@@ -521,6 +545,7 @@ const SongViewerFixed: React.FC<SongViewerProps> = ({
                   : '0 1px 2px rgba(0,0,0,0.8), 0 0 1px rgba(255,255,255,0.1)'
               }}
               onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
               {renderContent()}

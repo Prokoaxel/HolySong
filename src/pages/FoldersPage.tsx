@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react'
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
@@ -11,16 +11,51 @@ const FoldersPage: React.FC = () => {
 
   const [folders, setFolders] = useState<Folder[]>([])
   const [newFolderName, setNewFolderName] = useState('')
-  const [newFolderEmoji, setNewFolderEmoji] = useState('📁')
+  const [newFolderEmoji, setNewFolderEmoji] = useState('??')
   const [newFolderDescription, setNewFolderDescription] = useState('')
   const [search, setSearch] = useState('')
   const [creating, setCreating] = useState(false)
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false)
+
+  const [actionModalOpen, setActionModalOpen] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [editEmojiPickerOpen, setEditEmojiPickerOpen] = useState(false)
+  const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null)
+  const [editFolderName, setEditFolderName] = useState('')
+  const [editFolderEmoji, setEditFolderEmoji] = useState('??')
+  const [editFolderDescription, setEditFolderDescription] = useState('')
+  const [savingEdit, setSavingEdit] = useState(false)
+
   const [supportsFolderMeta, setSupportsFolderMeta] = useState(true)
-  const EMOJI_OPTIONS = ['📁', '🎵', '🙏', '🎸', '🎹', '🔥', '⭐', '📖', '🎤', '🎼', '🕊️', '💒']
+  const EMOJI_OPTIONS = ['??', '??', '??', '??', '??', '??', '?', '??', '??', '??', '???', '??']
+
+  const LONG_PRESS_MS = 1500
+  const pressTimerRef = useRef<number | null>(null)
+  const longPressTriggeredRef = useRef(false)
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
 
   const FOLDER_META_STORAGE_KEY = 'holysong.folderMeta.v1'
+  const LOCAL_FOLDERS_STORAGE_KEY = 'holysong.localFolders.v1'
+
+  const readLocalFolders = (): Folder[] => {
+    try {
+      const raw = localStorage.getItem(LOCAL_FOLDERS_STORAGE_KEY)
+      if (!raw) return []
+      return JSON.parse(raw) as Folder[]
+    } catch {
+      return []
+    }
+  }
+
+  const writeLocalFolders = (items: Folder[]) => {
+    try {
+      localStorage.setItem(LOCAL_FOLDERS_STORAGE_KEY, JSON.stringify(items))
+    } catch {
+      // noop
+    }
+  }
+
   const readLocalFolderMeta = (): Record<string, { emoji?: string; description?: string }> => {
     try {
       const raw = localStorage.getItem(FOLDER_META_STORAGE_KEY)
@@ -30,6 +65,7 @@ const FoldersPage: React.FC = () => {
       return {}
     }
   }
+
   const writeLocalFolderMeta = (meta: Record<string, { emoji?: string; description?: string }>) => {
     try {
       localStorage.setItem(FOLDER_META_STORAGE_KEY, JSON.stringify(meta))
@@ -41,15 +77,21 @@ const FoldersPage: React.FC = () => {
   useEffect(() => {
     const loadFolders = async () => {
       if (!user) return
+
       const fullQuery = await supabase
         .from('folders')
-        .select('id,name,emoji,description')
+        .select('id,name,emoji,description,owner_id')
         .eq('owner_id', user.id)
         .order('created_at', { ascending: true })
 
       if (!fullQuery.error) {
         setSupportsFolderMeta(true)
-        setFolders((fullQuery.data || []) as Folder[])
+        const owned = (fullQuery.data || []).map((f: any) => ({
+          ...f,
+          is_shared: false,
+          share_role: null,
+        })) as Folder[]
+        setFolders(owned)
         return
       }
 
@@ -61,6 +103,8 @@ const FoldersPage: React.FC = () => {
 
       if (basicQuery.error) {
         console.error(basicQuery.error)
+        const localOnly = readLocalFolders().filter(f => f.owner_id === user.id)
+        setFolders(localOnly)
         return
       }
 
@@ -70,6 +114,8 @@ const FoldersPage: React.FC = () => {
         ...f,
         emoji: localMeta[f.id]?.emoji || null,
         description: localMeta[f.id]?.description || null,
+        is_shared: false,
+        share_role: null,
       }))
       setFolders(merged as Folder[])
     }
@@ -80,10 +126,35 @@ const FoldersPage: React.FC = () => {
   const filteredFolders = useMemo(() => {
     const term = search.trim().toLowerCase()
     if (!term) return folders
-    return folders.filter(f =>
-      `${f.name || ''} ${f.description || ''}`.toLowerCase().includes(term),
-    )
+    return folders.filter(f => `${f.name || ''} ${f.description || ''}`.toLowerCase().includes(term))
   }, [folders, search])
+
+  const clearLongPressTimer = () => {
+    if (pressTimerRef.current !== null) {
+      window.clearTimeout(pressTimerRef.current)
+      pressTimerRef.current = null
+    }
+  }
+
+  const startLongPress = (folder: Folder, touch?: { x: number; y: number }) => {
+    clearLongPressTimer()
+    longPressTriggeredRef.current = false
+    touchStartRef.current = touch || null
+    pressTimerRef.current = window.setTimeout(() => {
+      longPressTriggeredRef.current = true
+      setSelectedFolder(folder)
+      setActionModalOpen(true)
+    }, LONG_PRESS_MS)
+  }
+
+  const openEditModal = (folder: Folder) => {
+    setSelectedFolder(folder)
+    setEditFolderName(folder.name || '')
+    setEditFolderEmoji(folder.emoji?.trim() || '??')
+    setEditFolderDescription(folder.description || '')
+    setEditEmojiPickerOpen(false)
+    setEditModalOpen(true)
+  }
 
   const handleCreateFolder = async () => {
     if (!user) return alert('Debes iniciar sesion para crear carpetas.')
@@ -93,7 +164,7 @@ const FoldersPage: React.FC = () => {
     const payloadWithMeta = {
       name: newFolderName.trim(),
       owner_id: user.id,
-      emoji: newFolderEmoji.trim() || '📁',
+      emoji: newFolderEmoji.trim() || '??',
       description: newFolderDescription.trim() || null,
     }
 
@@ -131,19 +202,138 @@ const FoldersPage: React.FC = () => {
 
     if (error) {
       console.error(error)
-      return alert('No se pudo crear la carpeta: ' + error.message)
+      const fallback: Folder = {
+        id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `local-${Date.now()}`,
+        name: payloadWithMeta.name,
+        owner_id: user.id,
+        emoji: payloadWithMeta.emoji,
+        description: payloadWithMeta.description,
+      }
+      const allLocal = readLocalFolders()
+      writeLocalFolders([fallback, ...allLocal])
+      setFolders(prev => [fallback, ...prev])
+      setNewFolderName('')
+      setNewFolderEmoji('??')
+      setNewFolderDescription('')
+      setEmojiPickerOpen(false)
+      setCreateModalOpen(false)
+      alert('Carpeta creada en modo local (sin Supabase).')
+      navigate(`/app/folders/${fallback.id}`)
+      return
     }
 
     if (data) {
       const created = data as Folder
       setFolders(prev => [created, ...prev])
       setNewFolderName('')
-      setNewFolderEmoji('📁')
+      setNewFolderEmoji('??')
       setNewFolderDescription('')
       setEmojiPickerOpen(false)
       setCreateModalOpen(false)
       navigate(`/app/folders/${created.id}`)
     }
+  }
+
+  const handleUpdateFolder = async () => {
+    if (!selectedFolder || !editFolderName.trim() || !user) return
+    setSavingEdit(true)
+
+    if (selectedFolder.id.startsWith('local-')) {
+      const local = readLocalFolders().map(f =>
+        f.id === selectedFolder.id
+          ? {
+              ...f,
+              name: editFolderName.trim(),
+              emoji: editFolderEmoji.trim() || '??',
+              description: editFolderDescription.trim() || null,
+            }
+          : f,
+      )
+      writeLocalFolders(local)
+      setFolders(prev => prev.map(f => (f.id === selectedFolder.id ? (local.find(x => x.id === f.id) as Folder) : f)))
+      setSavingEdit(false)
+      setEditModalOpen(false)
+      return
+    }
+
+    if (supportsFolderMeta) {
+      const { error } = await supabase
+        .from('folders')
+        .update({
+          name: editFolderName.trim(),
+          emoji: editFolderEmoji.trim() || '??',
+          description: editFolderDescription.trim() || null,
+        })
+        .eq('id', selectedFolder.id)
+        .eq('owner_id', user.id)
+
+      if (error) {
+        setSavingEdit(false)
+        alert('No se pudo actualizar la carpeta: ' + error.message)
+        return
+      }
+    } else {
+      const { error } = await supabase
+        .from('folders')
+        .update({ name: editFolderName.trim() })
+        .eq('id', selectedFolder.id)
+        .eq('owner_id', user.id)
+
+      if (error) {
+        setSavingEdit(false)
+        alert('No se pudo actualizar la carpeta: ' + error.message)
+        return
+      }
+
+      const localMeta = readLocalFolderMeta()
+      localMeta[selectedFolder.id] = {
+        emoji: editFolderEmoji.trim() || '??',
+        description: editFolderDescription.trim() || undefined,
+      }
+      writeLocalFolderMeta(localMeta)
+    }
+
+    setFolders(prev =>
+      prev.map(f =>
+        f.id === selectedFolder.id
+          ? {
+              ...f,
+              name: editFolderName.trim(),
+              emoji: editFolderEmoji.trim() || '??',
+              description: editFolderDescription.trim() || null,
+            }
+          : f,
+      ),
+    )
+    setSavingEdit(false)
+    setEditModalOpen(false)
+  }
+
+  const handleDeleteFolder = async (folder: Folder) => {
+    if (!user) return
+    const sure = window.confirm('¿Estas seguro? Esta carpeta se va a eliminar.')
+    if (!sure) return
+
+    if (folder.id.startsWith('local-')) {
+      const local = readLocalFolders().filter(f => f.id !== folder.id)
+      writeLocalFolders(local)
+      setFolders(prev => prev.filter(f => f.id !== folder.id))
+      setActionModalOpen(false)
+      return
+    }
+
+    const { error } = await supabase
+      .from('folders')
+      .delete()
+      .eq('id', folder.id)
+      .eq('owner_id', user.id)
+
+    if (error) {
+      alert('No se pudo eliminar la carpeta: ' + error.message)
+      return
+    }
+    setFolders(prev => prev.filter(f => f.id !== folder.id))
+    setActionModalOpen(false)
   }
 
   return (
@@ -182,18 +372,36 @@ const FoldersPage: React.FC = () => {
             {filteredFolders.map(folder => (
               <button
                 key={folder.id}
-                onClick={() => navigate(`/app/folders/${folder.id}`)}
-                className="w-full text-left px-3 sm:px-4 py-3 border-b border-slate-800/70 last:border-b-0 bg-slate-900/35 hover:bg-slate-800/70 transition-colors flex items-center gap-3"
+                onClick={() => {
+                  if (longPressTriggeredRef.current) {
+                    longPressTriggeredRef.current = false
+                    return
+                  }
+                  navigate(`/app/folders/${folder.id}`)
+                }}
+                onTouchStart={e => startLongPress(folder, { x: e.touches[0].clientX, y: e.touches[0].clientY })}
+                onTouchEnd={clearLongPressTimer}
+                onTouchCancel={clearLongPressTimer}
+                onTouchMove={e => {
+                  if (!touchStartRef.current) return
+                  const dx = Math.abs(e.touches[0].clientX - touchStartRef.current.x)
+                  const dy = Math.abs(e.touches[0].clientY - touchStartRef.current.y)
+                  if (dx > 12 || dy > 12) clearLongPressTimer()
+                }}
+                onMouseDown={() => startLongPress(folder)}
+                onMouseUp={clearLongPressTimer}
+                onMouseLeave={clearLongPressTimer}
+                onContextMenu={e => e.preventDefault()}
+                style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+                className="w-full select-none text-left px-3 sm:px-4 py-3 border-b border-slate-800/70 last:border-b-0 bg-slate-900/35 hover:bg-slate-800/70 transition-colors flex items-center gap-3"
               >
                 <span className="h-8 w-8 rounded-md border border-purple-500/40 bg-purple-500/10 text-purple-200 flex items-center justify-center flex-shrink-0 text-base">
-                  {folder.emoji?.trim() || '📁'}
+                  {folder.emoji?.trim() || '??'}
                 </span>
 
                 <span className="flex-1 min-w-0">
                   <span className="block text-sm font-medium text-slate-100 truncate">{folder.name}</span>
-                  {folder.description && (
-                    <span className="block text-[11px] text-slate-400 truncate">{folder.description}</span>
-                  )}
+                  {folder.description && <span className="block text-[11px] text-slate-400 truncate">{folder.description}</span>}
                 </span>
 
                 <span className="text-slate-500 flex-shrink-0">
@@ -207,84 +415,194 @@ const FoldersPage: React.FC = () => {
         )}
       </div>
 
-      {createModalOpen && createPortal(
-        <div className="fixed inset-0 z-[120]">
-          <button className="absolute inset-0 bg-black/60" onClick={() => { setCreateModalOpen(false); setEmojiPickerOpen(false) }} aria-label="Cerrar" />
-          <div className="absolute left-1/2 top-1/2 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-600 bg-slate-900 p-3 shadow-2xl">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-slate-100">Crear carpeta</p>
-              <button
-                onClick={() => { setCreateModalOpen(false); setEmojiPickerOpen(false) }}
-                className="h-8 w-8 rounded-md border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-slate-100 hover:bg-slate-700 flex items-center justify-center text-lg leading-none"
-                aria-label="Cerrar"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="space-y-2.5">
-              <input
-                value={newFolderName}
-                onChange={e => setNewFolderName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleCreateFolder()}
-                placeholder="Nombre de la carpeta"
-                className="w-full rounded-lg bg-slate-950/80 border border-slate-700 focus:border-purple-500/50 px-3 py-2.5 text-sm outline-none transition-all"
-              />
-
-              <div className="space-y-1.5">
+      {createModalOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-[120]">
+            <button className="absolute inset-0 bg-black/60" onClick={() => { setCreateModalOpen(false); setEmojiPickerOpen(false) }} aria-label="Cerrar" />
+            <div className="absolute left-1/2 top-1/2 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-600 bg-slate-900 p-3 shadow-2xl">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-slate-100">Crear carpeta</p>
                 <button
-                  type="button"
-                  onClick={() => setEmojiPickerOpen(v => !v)}
-                  className="w-full rounded-lg bg-slate-950/80 border border-slate-700 hover:border-purple-500/50 px-3 py-2 text-sm text-left flex items-center justify-between transition-all"
+                  onClick={() => { setCreateModalOpen(false); setEmojiPickerOpen(false) }}
+                  className="h-8 w-8 rounded-md border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-slate-100 hover:bg-slate-700 flex items-center justify-center text-lg leading-none"
+                  aria-label="Cerrar"
                 >
-                  <span className="flex items-center gap-2">
-                    <span className="text-lg">{newFolderEmoji}</span>
-                    <span className="text-slate-200">Icono</span>
-                  </span>
-                  <span className="text-slate-400 text-xs">{emojiPickerOpen ? 'Ocultar' : 'Elegir'}</span>
+                  ×
                 </button>
-
-                {emojiPickerOpen && (
-                  <div className="grid grid-cols-6 gap-1.5 rounded-lg border border-slate-700 bg-slate-950/60 p-2">
-                    {EMOJI_OPTIONS.map(emoji => (
-                      <button
-                        key={emoji}
-                        onClick={() => {
-                          setNewFolderEmoji(emoji)
-                          setEmojiPickerOpen(false)
-                        }}
-                        className={'h-8 rounded-md border text-base transition-all active:scale-95 ' + (newFolderEmoji === emoji ? 'border-teal-400 bg-teal-500/20' : 'border-slate-700 bg-slate-900/70 hover:border-slate-500')}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
 
-              <input
-                value={newFolderDescription}
-                onChange={e => setNewFolderDescription(e.target.value)}
-                placeholder="Descripcion opcional"
-                className="w-full rounded-lg bg-slate-950/80 border border-slate-700 focus:border-purple-500/50 px-3 py-2.5 text-sm outline-none transition-all"
-              />
+              <div className="space-y-2.5">
+                <input
+                  value={newFolderName}
+                  onChange={e => setNewFolderName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleCreateFolder()}
+                  placeholder="Nombre de la carpeta"
+                  className="w-full rounded-lg bg-slate-950/80 border border-slate-700 focus:border-purple-500/50 px-3 py-2.5 text-sm outline-none transition-all"
+                />
 
-              <button
-                onClick={handleCreateFolder}
-                disabled={creating || !newFolderName.trim()}
-                className="w-full rounded-lg bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 disabled:from-slate-700 disabled:to-slate-700 px-3 py-2.5 text-sm font-semibold transition-all disabled:opacity-50"
-              >
-                {creating ? 'Creando...' : 'Crear'}
-              </button>
+                <div className="space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setEmojiPickerOpen(v => !v)}
+                    className="w-full rounded-lg bg-slate-950/80 border border-slate-700 hover:border-purple-500/50 px-3 py-2 text-sm text-left flex items-center justify-between transition-all"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="text-lg">{newFolderEmoji}</span>
+                      <span className="text-slate-200">Icono</span>
+                    </span>
+                    <span className="text-slate-400 text-xs">{emojiPickerOpen ? 'Ocultar' : 'Elegir'}</span>
+                  </button>
+
+                  {emojiPickerOpen && (
+                    <div className="grid grid-cols-6 gap-1.5 rounded-lg border border-slate-700 bg-slate-950/60 p-2">
+                      {EMOJI_OPTIONS.map(emoji => (
+                        <button
+                          key={emoji}
+                          onClick={() => {
+                            setNewFolderEmoji(emoji)
+                            setEmojiPickerOpen(false)
+                          }}
+                          className={'h-8 rounded-md border text-base transition-all active:scale-95 ' + (newFolderEmoji === emoji ? 'border-teal-400 bg-teal-500/20' : 'border-slate-700 bg-slate-900/70 hover:border-slate-500')}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <input
+                  value={newFolderDescription}
+                  onChange={e => setNewFolderDescription(e.target.value)}
+                  placeholder="Descripcion opcional"
+                  className="w-full rounded-lg bg-slate-950/80 border border-slate-700 focus:border-purple-500/50 px-3 py-2.5 text-sm outline-none transition-all"
+                />
+
+                <button
+                  onClick={handleCreateFolder}
+                  disabled={creating || !newFolderName.trim()}
+                  className="w-full rounded-lg bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 disabled:from-slate-700 disabled:to-slate-700 px-3 py-2.5 text-sm font-semibold transition-all disabled:opacity-50"
+                >
+                  {creating ? 'Creando...' : 'Crear'}
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      , document.body
-      )}
+          </div>,
+          document.body,
+        )}
+
+      {actionModalOpen && selectedFolder &&
+        createPortal(
+          <div className="fixed inset-0 z-[130]">
+            <button className="absolute inset-0 bg-black/60" onClick={() => setActionModalOpen(false)} aria-label="Cerrar" />
+            <div className="absolute left-1/2 top-1/2 w-[calc(100%-2rem)] max-w-xs -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-600 bg-slate-900 p-3 shadow-2xl">
+              <p className="text-sm font-semibold text-slate-100 mb-2">Carpeta: {selectedFolder.name}</p>
+              <div className="grid gap-2">
+                <button
+                  onClick={() => {
+                    setActionModalOpen(false)
+                    openEditModal(selectedFolder)
+                  }}
+                  className="rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-2 text-sm"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => handleDeleteFolder(selectedFolder)}
+                  className="rounded-lg bg-red-700 hover:bg-red-600 border border-red-500 px-3 py-2 text-sm"
+                >
+                  Eliminar
+                </button>
+                <button
+                  onClick={() => setActionModalOpen(false)}
+                  className="rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-2 text-sm"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {editModalOpen && selectedFolder &&
+        createPortal(
+          <div className="fixed inset-0 z-[140]">
+            <button className="absolute inset-0 bg-black/60" onClick={() => { setEditModalOpen(false); setEditEmojiPickerOpen(false) }} aria-label="Cerrar" />
+            <div className="absolute left-1/2 top-1/2 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-600 bg-slate-900 p-3 shadow-2xl">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-slate-100">Editar carpeta</p>
+                <button
+                  onClick={() => { setEditModalOpen(false); setEditEmojiPickerOpen(false) }}
+                  className="h-8 w-8 rounded-md border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-slate-100 hover:bg-slate-700 flex items-center justify-center text-lg leading-none"
+                  aria-label="Cerrar"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="space-y-2.5">
+                <input
+                  value={editFolderName}
+                  onChange={e => setEditFolderName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleUpdateFolder()}
+                  placeholder="Nombre de la carpeta"
+                  className="w-full rounded-lg bg-slate-950/80 border border-slate-700 focus:border-purple-500/50 px-3 py-2.5 text-sm outline-none transition-all"
+                />
+
+                <div className="space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setEditEmojiPickerOpen(v => !v)}
+                    className="w-full rounded-lg bg-slate-950/80 border border-slate-700 hover:border-purple-500/50 px-3 py-2 text-sm text-left flex items-center justify-between transition-all"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="text-lg">{editFolderEmoji}</span>
+                      <span className="text-slate-200">Icono</span>
+                    </span>
+                    <span className="text-slate-400 text-xs">{editEmojiPickerOpen ? 'Ocultar' : 'Elegir'}</span>
+                  </button>
+
+                  {editEmojiPickerOpen && (
+                    <div className="grid grid-cols-6 gap-1.5 rounded-lg border border-slate-700 bg-slate-950/60 p-2">
+                      {EMOJI_OPTIONS.map(emoji => (
+                        <button
+                          key={emoji}
+                          onClick={() => {
+                            setEditFolderEmoji(emoji)
+                            setEditEmojiPickerOpen(false)
+                          }}
+                          className={'h-8 rounded-md border text-base transition-all active:scale-95 ' + (editFolderEmoji === emoji ? 'border-teal-400 bg-teal-500/20' : 'border-slate-700 bg-slate-900/70 hover:border-slate-500')}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <input
+                  value={editFolderDescription}
+                  onChange={e => setEditFolderDescription(e.target.value)}
+                  placeholder="Descripcion opcional"
+                  className="w-full rounded-lg bg-slate-950/80 border border-slate-700 focus:border-purple-500/50 px-3 py-2.5 text-sm outline-none transition-all"
+                />
+
+                <button
+                  onClick={handleUpdateFolder}
+                  disabled={savingEdit || !editFolderName.trim()}
+                  className="w-full rounded-lg bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 disabled:from-slate-700 disabled:to-slate-700 px-3 py-2.5 text-sm font-semibold transition-all disabled:opacity-50"
+                >
+                  {savingEdit ? 'Guardando...' : 'Guardar cambios'}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }
 
 export default FoldersPage
-
 

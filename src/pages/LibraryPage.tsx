@@ -11,6 +11,11 @@ type SongListItem = Song & {
   versionCount?: number
 }
 
+type VersionOption = {
+  id: string
+  label: string
+}
+
 const OWNER_EMAIL = 'axelproko2016@gmail.com'
 
 const LibraryPage: React.FC = () => {
@@ -22,6 +27,8 @@ const LibraryPage: React.FC = () => {
   const [search, setSearch] = useState('')
   const [menuSong, setMenuSong] = useState<SongListItem | null>(null)
   const [processingMenuAction, setProcessingMenuAction] = useState(false)
+  const [versionDeleteModalOpen, setVersionDeleteModalOpen] = useState(false)
+  const [versionOptions, setVersionOptions] = useState<VersionOption[]>([])
 
   const longPressTimerRef = useRef<number | null>(null)
   const longPressFiredRef = useRef(false)
@@ -204,7 +211,33 @@ const LibraryPage: React.FC = () => {
     if (!menuSong) return
     if (!requestSecurityCode('eliminar la cancion')) return
 
-    const ok = window.confirm(`Se eliminara "${menuSong.title}" y sus versiones. Continuar?`)
+    if ((menuSong.versionCount || 1) > 1) {
+      try {
+        setProcessingMenuAction(true)
+        const { data, error } = await supabase
+          .from('song_versions')
+          .select('id,version_label')
+          .eq('song_id', menuSong.id)
+          .order('created_at', { ascending: true })
+
+        if (error) throw error
+
+        const options = (data || []).map((v: any) => ({
+          id: String(v.id),
+          label: String(v.version_label || 'Version'),
+        }))
+        setVersionOptions(options)
+        setVersionDeleteModalOpen(true)
+      } catch (err: any) {
+        console.error(err)
+        alert('No se pudieron cargar las versiones: ' + (err?.message || ''))
+      } finally {
+        setProcessingMenuAction(false)
+      }
+      return
+    }
+
+    const ok = window.confirm(`Se eliminara "${menuSong.title}". Continuar?`)
     if (!ok) return
 
     try {
@@ -226,6 +259,70 @@ const LibraryPage: React.FC = () => {
     } catch (err: any) {
       console.error(err)
       alert('No se pudo eliminar la cancion: ' + (err?.message || ''))
+    } finally {
+      setProcessingMenuAction(false)
+    }
+  }
+
+  const handleDeleteSingleVersion = async (versionId: string, label: string) => {
+    if (!menuSong) return
+    const ok = window.confirm(`Eliminar ${label} de "${menuSong.title}"?`)
+    if (!ok) return
+
+    try {
+      setProcessingMenuAction(true)
+      const { error } = await supabase
+        .from('song_versions')
+        .delete()
+        .eq('id', versionId)
+        .eq('song_id', menuSong.id)
+
+      if (error) throw error
+
+      setSongs(prev => prev.map(song =>
+        song.id === menuSong.id
+          ? { ...song, versionCount: Math.max(1, (song.versionCount || 1) - 1) }
+          : song,
+      ))
+      setVersionOptions(prev => {
+        const next = prev.filter(v => v.id !== versionId)
+        if (next.length === 0) setVersionDeleteModalOpen(false)
+        return next
+      })
+      alert(`Se elimino ${label}.`)
+    } catch (err: any) {
+      console.error(err)
+      alert('No se pudo eliminar la version: ' + (err?.message || ''))
+    } finally {
+      setProcessingMenuAction(false)
+    }
+  }
+
+  const handleDeleteAllVersions = async () => {
+    if (!menuSong) return
+    const ok = window.confirm(`Se eliminara "${menuSong.title}" con todas sus versiones. Continuar?`)
+    if (!ok) return
+
+    try {
+      setProcessingMenuAction(true)
+      await supabase.from('song_versions').delete().eq('song_id', menuSong.id)
+      await supabase.from('folder_songs').delete().eq('song_id', menuSong.id)
+
+      const { error: deleteSongError } = await supabase
+        .from('songs')
+        .delete()
+        .eq('id', menuSong.id)
+
+      if (deleteSongError) throw deleteSongError
+
+      setSongs(prev => prev.filter(s => s.id !== menuSong.id))
+      setVersionDeleteModalOpen(false)
+      setVersionOptions([])
+      setMenuSong(null)
+      alert('Cancion y versiones eliminadas correctamente.')
+    } catch (err: any) {
+      console.error(err)
+      alert('No se pudo eliminar todo: ' + (err?.message || ''))
     } finally {
       setProcessingMenuAction(false)
     }
@@ -342,7 +439,58 @@ const LibraryPage: React.FC = () => {
                 disabled={processingMenuAction}
                 className="w-full rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2.5 text-sm text-red-100 hover:bg-red-500/20 disabled:opacity-60"
               >
-                Eliminar cancion
+                {(menuSong.versionCount || 1) > 1 ? 'Eliminar versiones' : 'Eliminar cancion'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+
+      {menuSong && versionDeleteModalOpen && createPortal(
+        <div className="fixed inset-0 z-[140]">
+          <button
+            className="absolute inset-0 bg-black/70"
+            onClick={() => !processingMenuAction && setVersionDeleteModalOpen(false)}
+            aria-label="Cerrar selector de versiones"
+          />
+          <div className="absolute left-1/2 top-1/2 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-600 bg-slate-900 p-3 shadow-2xl">
+            <div className="mb-3">
+              <p className="text-sm font-semibold text-slate-100 truncate">{menuSong.title}</p>
+              <p className="text-[11px] text-slate-400 mt-1">Elegi una version para eliminar, o elimina todas.</p>
+            </div>
+
+            <div className="space-y-2 max-h-64 overflow-auto pr-1">
+              {versionOptions.length === 0 ? (
+                <p className="text-[12px] text-slate-400">No se encontraron versiones extra para esta cancion.</p>
+              ) : (
+                versionOptions.map(v => (
+                  <button
+                    key={v.id}
+                    onClick={() => handleDeleteSingleVersion(v.id, v.label)}
+                    disabled={processingMenuAction}
+                    className="w-full rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-sm text-amber-100 hover:bg-amber-500/20 disabled:opacity-60 text-left"
+                  >
+                    Eliminar {v.label}
+                  </button>
+                ))
+              )}
+            </div>
+
+            <div className="mt-3 space-y-2">
+              <button
+                onClick={handleDeleteAllVersions}
+                disabled={processingMenuAction}
+                className="w-full rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2.5 text-sm text-red-100 hover:bg-red-500/20 disabled:opacity-60"
+              >
+                Eliminar todas las versiones
+              </button>
+              <button
+                onClick={() => setVersionDeleteModalOpen(false)}
+                disabled={processingMenuAction}
+                className="w-full rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2.5 text-sm text-slate-100 hover:bg-slate-700 disabled:opacity-60"
+              >
+                Cancelar
               </button>
             </div>
           </div>

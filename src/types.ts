@@ -13,13 +13,23 @@ export type Folder = {
   owner_id?: string | null
   emoji?: string | null
   description?: string | null
+  is_shared?: boolean
+  share_role?: 'viewer' | 'editor' | null
 }
 
 export type FolderSong = {
   folder_id: string
   song_id: string
   custom_transpose: number
+  order_index?: number
   songs?: Song
+}
+
+export type FolderShare = {
+  folder_id: string
+  shared_with_email: string
+  role: 'viewer' | 'editor'
+  created_at?: string
 }
 
 export type DbSong = {

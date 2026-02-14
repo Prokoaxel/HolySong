@@ -61,13 +61,46 @@ const SongPage: React.FC = () => {
   const [controlsOpen, setControlsOpen] = useState<boolean>(false)
   // Mobile transpose panel toggle
   const [transposeOpen, setTransposeOpen] = useState<boolean>(false)
+  const LOCAL_FOLDER_SONGS_STORAGE_KEY = 'holysong.localFolderSongs.v1'
+
+  const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
+  const FLAT_TO_SHARP: Record<string, string> = { Db: 'C#', Eb: 'D#', Gb: 'F#', Ab: 'G#', Bb: 'A#' }
+  const parseTone = (rawTone: string): { root: string; suffix: string } => {
+    const tone = (rawTone || '').trim()
+    const m = tone.match(/^([A-Ga-g])([#b]?)(.*)$/)
+    if (!m) return { root: 'C', suffix: '' }
+    const root = `${m[1].toUpperCase()}${m[2] || ''}`
+    return {
+      root: FLAT_TO_SHARP[root] || root,
+      suffix: m[3] || ''
+    }
+  }
+
+  const readLocalFolderSongs = (): Record<string, { song_id: string; custom_transpose: number; order_index: number }[]> => {
+    try {
+      const raw = localStorage.getItem(LOCAL_FOLDER_SONGS_STORAGE_KEY)
+      if (!raw) return {}
+      const parsed = JSON.parse(raw)
+      if (!parsed || typeof parsed !== 'object') return {}
+      return parsed as Record<string, { song_id: string; custom_transpose: number; order_index: number }[]>
+    } catch {
+      return {}
+    }
+  }
+  const transposeTone = (rawTone: string, steps: number) => {
+    if (!rawTone?.trim()) return ''
+    const { root, suffix } = parseTone(rawTone)
+    const idx = NOTE_NAMES.indexOf(root)
+    if (idx === -1) return rawTone
+    const newRoot = NOTE_NAMES[(idx + steps + 12 * 10) % 12]
+    return `${newRoot}${suffix}`
+  }
 
   // Helper: compute transpose steps from base song tone to target note
   const computeStepsTo = (target: string) => {
-    const base = (song?.tone ?? 'C') as string
-    const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
-    const fromIdx = NOTES.indexOf(base)
-    const toIdx = NOTES.indexOf(target)
+    const base = selectedVersion?.tone ?? song?.tone ?? 'C'
+    const fromIdx = NOTE_NAMES.indexOf(parseTone(base).root)
+    const toIdx = NOTE_NAMES.indexOf(target)
     if (fromIdx === -1 || toIdx === -1) return transposeSteps
     let steps = toIdx - fromIdx
     if (steps > 6) steps -= 12
@@ -132,14 +165,14 @@ const SongPage: React.FC = () => {
   useEffect(() => {
     const loadFolders = async () => {
       if (!user) return
-      const { data, error } = await supabase
+      const ownQuery = await supabase
         .from('folders')
         .select('id,name')
         .eq('owner_id', user.id)
         .order('name', { ascending: true })
-      if (!error && data) {
-        setFolders(data as any)
-      }
+
+      const own = !ownQuery.error && ownQuery.data ? (ownQuery.data as any[]) : []
+      setFolders(own as any)
     }
     loadFolders()
   }, [user])
@@ -169,11 +202,42 @@ const SongPage: React.FC = () => {
   useEffect(() => {
     const loadFolderSongs = async () => {
       if (!folderId || !id) return
-      
+      if (folderId.startsWith('local-')) {
+        const byFolder = readLocalFolderSongs()
+        const saved = (byFolder[folderId] || []).sort((a, b) => a.order_index - b.order_index)
+        if (!saved.length) {
+          setFolderSongs([])
+          setCurrentIndexInFolder(-1)
+          setFolderCustomTranspose(0)
+          return
+        }
+
+        const ids = saved.map(x => x.song_id)
+        const { data: songsData } = await supabase.from('songs').select('id,title').in('id', ids)
+        const songMap = new Map<string, { id: string; title: string }>((songsData || []).map((s: any) => [s.id, { id: s.id, title: s.title }]))
+
+        const songList = saved.map(item => ({
+          id: item.song_id,
+          title: songMap.get(item.song_id)?.title || 'Cancion',
+          custom_transpose: item.custom_transpose || 0
+        }))
+        setFolderSongs(songList)
+        const currentIdx = songList.findIndex((s: any) => s.id === id)
+        setCurrentIndexInFolder(currentIdx)
+        if (currentIdx >= 0) {
+          const customTrans = songList[currentIdx].custom_transpose || 0
+          setFolderCustomTranspose(customTrans)
+          setTransposeSteps(customTrans)
+        }
+        return
+      }
+
       const { data, error } = await supabase
         .from('folder_songs')
-        .select('song_id, custom_transpose, songs(id, title)')
+        .select('song_id, custom_transpose, order_index, songs(id, title)')
         .eq('folder_id', folderId)
+        .order('order_index', { ascending: true, nullsFirst: false })
+        .order('song_id', { ascending: true })
       
       if (!error && data) {
         const songList = data.map((r: any) => ({
@@ -208,6 +272,8 @@ const SongPage: React.FC = () => {
     const nextSong = folderSongs[currentIndexInFolder + 1]
     navigate(`/app/song/${nextSong.id}?folderId=${folderId}`)
   }
+
+  const showFolderFixedNav = Boolean(folderId && folderSongs.length > 1 && currentIndexInFolder >= 0)
 
   // =========================
   // Metrónomo
@@ -274,6 +340,23 @@ const SongPage: React.FC = () => {
     return () => clearInterval(scrollInterval)
   }, [autoScrollOn, scrollSpeed])
 
+  // Siempre arrancar arriba al abrir/cambiar cancion o version
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    if (lyricsContainerRef.current) {
+      lyricsContainerRef.current.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    }
+
+    const raf = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      if (lyricsContainerRef.current) {
+        lyricsContainerRef.current.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      }
+    })
+
+    return () => window.cancelAnimationFrame(raf)
+  }, [id, selectedVersionId])
+
   // =========================
   // Versión seleccionada
   // =========================
@@ -284,14 +367,8 @@ const SongPage: React.FC = () => {
 
   const currentTitle = song?.title ?? ''
   const baseTone = selectedVersion?.tone ?? song?.tone ?? ''
-  const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
-  const currentTone = useMemo(() => {
-    const base = (baseTone || '') as string
-    const idx = NOTES.indexOf(base)
-    if (idx === -1) return base
-    const newIndex = (idx + transposeSteps + 12) % 12
-    return NOTES[newIndex]
-  }, [baseTone, transposeSteps])
+  const currentTone = useMemo(() => transposeTone(baseTone, transposeSteps), [baseTone, transposeSteps])
+  const currentToneRoot = useMemo(() => parseTone(currentTone).root, [currentTone])
   const currentContent = selectedVersion?.content ?? song?.content ?? ''
 
   // =========================
@@ -644,6 +721,36 @@ const SongPage: React.FC = () => {
 
   return (
     <div className="h-full overflow-hidden px-0 md:px-6 md:-mt-4 fade-in">
+      {showFolderFixedNav &&
+        createPortal(
+          <div className="fixed top-[56px] right-2 z-[70]">
+            <div className="flex items-center gap-1 rounded-xl bg-slate-900/90 border border-slate-600 shadow-lg px-1.5 py-1 backdrop-blur-sm">
+              <button
+                onClick={goPrevInFolder}
+                disabled={currentIndexInFolder <= 0}
+                className="h-8 w-8 rounded-md bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-700 text-slate-100 text-sm font-bold flex items-center justify-center"
+                aria-label="Cancion anterior"
+                title="Cancion anterior"
+              >
+                {'<'}
+              </button>
+              <span className="min-w-[52px] text-center text-[10px] text-slate-300 font-semibold">
+                {currentIndexInFolder + 1}/{folderSongs.length}
+              </span>
+              <button
+                onClick={goNextInFolder}
+                disabled={currentIndexInFolder >= folderSongs.length - 1}
+                className="h-8 w-8 rounded-md bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-700 text-slate-100 text-sm font-bold flex items-center justify-center"
+                aria-label="Siguiente cancion"
+                title="Siguiente cancion"
+              >
+                {'>'}
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
+
       <div className="grid grid-cols-12 gap-3">
         {/* LEFT COLUMN - unified stripe (desktop only) */}
         <div className={`col-span-12 md:col-span-4 lg:col-span-3 no-print hidden md:block`}>
@@ -699,7 +806,7 @@ const SongPage: React.FC = () => {
           {createPortal(
             <>
               {/* Botón transportador/tono - arriba de todo */}
-              <div className={`md:hidden fixed right-2 top-[68px] z-50 transition-all duration-300 ${transposeOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+              <div className={`md:hidden fixed right-2 top-[110px] z-50 transition-all duration-300 ${transposeOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                 <button
                   onClick={() => setTransposeOpen(!transposeOpen)}
                   className="w-9 h-9 rounded-lg bg-slate-800/70 border border-teal-500/45 text-slate-100 shadow-lg flex items-center justify-center"
@@ -716,7 +823,7 @@ const SongPage: React.FC = () => {
               </div>
 
               {/* Panel de transporte expandido */}
-              <div className={`md:hidden fixed right-2 top-[68px] z-50 transition-all duration-300 ${transposeOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
+              <div className={`md:hidden fixed right-2 top-[110px] z-50 transition-all duration-300 ${transposeOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
                 <div className="rounded-xl bg-slate-800/95 border border-teal-500/60 px-2.5 py-2 shadow-xl backdrop-blur-sm w-32">
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-1">
@@ -740,7 +847,7 @@ const SongPage: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-4 gap-1 mb-1.5">
                     {['C','D','E','F','G','A','B'].map(n => (
-                      <button key={n} onClick={() => setTransposeSteps(computeStepsTo(n))} className={'rounded py-1 text-[10px] font-bold transition-all active:scale-95 ' + (currentTone === n ? 'bg-teal-400 text-slate-950' : 'bg-slate-700 text-slate-300')}>{n}</button>
+                      <button key={n} onClick={() => setTransposeSteps(computeStepsTo(n))} className={'rounded py-1 text-[10px] font-bold transition-all active:scale-95 ' + (currentToneRoot === n ? 'bg-teal-400 text-slate-950' : 'bg-slate-700 text-slate-300')}>{n}</button>
                     ))}
                     <button onClick={() => setTransposeSteps(0)} className="rounded py-1 text-[9px] font-bold bg-slate-700 text-slate-400" title="Reset">R</button>
                   </div>
@@ -752,7 +859,7 @@ const SongPage: React.FC = () => {
               </div>
 
               {/* Botón engranaje - se empuja hacia abajo cuando transpose está abierto */}
-              <div className={`md:hidden fixed right-2 z-50 transition-all duration-300 ${transposeOpen ? 'top-[266px]' : 'top-[168px]'}`}>
+              <div className={`md:hidden fixed right-2 z-50 transition-all duration-300 ${transposeOpen ? 'top-[308px]' : 'top-[210px]'}`}>
                 <button
                   onClick={() => setControlsOpen(v => !v)}
                   className={
@@ -772,7 +879,7 @@ const SongPage: React.FC = () => {
               </div>
 
               {/* Botón carpeta - se empuja hacia abajo cuando transpose está abierto */}
-              <div className={`md:hidden fixed right-2 z-50 transition-all duration-300 ${transposeOpen ? 'top-[216px]' : 'top-[118px]'}`}>
+              <div className={`md:hidden fixed right-2 z-50 transition-all duration-300 ${transposeOpen ? 'top-[258px]' : 'top-[160px]'}`}>
                 <button
                   onClick={handleAddToFolder}
                   className={
@@ -796,7 +903,7 @@ const SongPage: React.FC = () => {
       </div>
 
       {/* Mini panel de configuracion movil */}
-      <div className={`md:hidden fixed right-2 z-50 origin-top-right transition-all duration-300 ${transposeOpen ? 'top-[266px]' : 'top-[168px]'} ${controlsOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
+      <div className={`md:hidden fixed right-2 z-50 origin-top-right transition-all duration-300 ${transposeOpen ? 'top-[308px]' : 'top-[210px]'} ${controlsOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
           <div className="w-[132px] rounded-xl bg-slate-800/95 border border-slate-500/70 px-1.5 py-1.5 shadow-xl backdrop-blur-sm">
             <div className="flex items-center justify-between mb-2">
               <button
