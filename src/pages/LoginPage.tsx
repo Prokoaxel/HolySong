@@ -17,7 +17,7 @@ const LoginPage: React.FC = () => {
           <div className="flex items-center gap-2 mb-6">
           <div className="h-12 w-12 rounded-2xl bg-transparent flex items-center justify-center logo-ornament">
             <div className="logo-ring" />
-            <img src="/src/assets/logo.svg" className="w-10 h-10 animate-breath transform transition-transform duration-200" alt="HolySong"/>
+            <img src="/brand/note.svg" className="w-10 h-10 animate-breath transform transition-transform duration-200" alt="HolySong"/>
           </div>
           <div>
             <h1 className="text-2xl font-semibold">HolySong</h1>
