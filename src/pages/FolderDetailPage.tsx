@@ -22,6 +22,7 @@ const FolderDetailPage: React.FC = () => {
   const [isOwner, setIsOwner] = useState(false)
   const [linkShareEnabled, setLinkShareEnabled] = useState(false)
   const [supportsLinkShare, setSupportsLinkShare] = useState(true)
+  const [savingSharedCopy, setSavingSharedCopy] = useState(false)
   const LOCAL_FOLDERS_STORAGE_KEY = 'holysong.localFolders.v1'
   const LOCAL_FOLDER_SONGS_STORAGE_KEY = 'holysong.localFolderSongs.v1'
 
@@ -466,6 +467,60 @@ const FolderDetailPage: React.FC = () => {
     setLinkShareEnabled(next)
   }
 
+  const saveSharedFolderCopy = async () => {
+    if (!user || !id || !folderName) {
+      alert('Debes iniciar sesion para guardar la carpeta.')
+      return
+    }
+    if (isOwner) {
+      alert('Esta carpeta ya es tuya.')
+      return
+    }
+
+    const ok = window.confirm(`Deseas guardar esta carpeta en tu cuenta?\n\nSe creara una copia con ${songs.length} canciones.`)
+    if (!ok) return
+
+    try {
+      setSavingSharedCopy(true)
+      const copyName = `${folderName} (copia)`
+      const { data: createdFolder, error: createFolderError } = await supabase
+        .from('folders')
+        .insert({ name: copyName, owner_id: user.id })
+        .select('id')
+        .single()
+
+      if (createFolderError || !createdFolder) {
+        throw createFolderError || new Error('No se pudo crear la carpeta.')
+      }
+
+      if (folderSongs.length > 0) {
+        const withOrder = folderSongs.map((fs, idx) => ({
+          folder_id: createdFolder.id,
+          song_id: fs.song_id,
+          custom_transpose: fs.custom_transpose || 0,
+          order_index: fs.order_index ?? idx,
+        }))
+
+        let insertRes = await supabase.from('folder_songs').insert(withOrder)
+        if (insertRes.error && String(insertRes.error.message || '').toLowerCase().includes('order_index')) {
+          const withoutOrder = withOrder.map(({ order_index: _omit, ...rest }) => rest)
+          insertRes = await supabase.from('folder_songs').insert(withoutOrder as any)
+        }
+        if (insertRes.error) {
+          throw insertRes.error
+        }
+      }
+
+      alert('Carpeta guardada correctamente en tu cuenta.')
+      navigate(`/app/folders/${createdFolder.id}`)
+    } catch (err: any) {
+      console.error(err)
+      alert('No se pudo guardar la carpeta: ' + (err?.message || ''))
+    } finally {
+      setSavingSharedCopy(false)
+    }
+  }
+
   const copyShareLink = async () => {
     if (!id) return
     const link = `${window.location.origin}/app/folders/${id}`
@@ -685,6 +740,20 @@ const FolderDetailPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {!isOwner && linkShareEnabled && (
+        <div className="rounded-xl border border-teal-500/35 bg-teal-500/10 p-3 sm:p-4 space-y-2">
+          <h2 className="text-xs sm:text-sm font-bold text-teal-200">Carpeta compartida</h2>
+          <p className="text-[11px] text-slate-300">Deseas guardar esta carpeta en tu cuenta para usarla luego?</p>
+          <button
+            onClick={saveSharedFolderCopy}
+            disabled={savingSharedCopy}
+            className="rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold bg-teal-600 hover:bg-teal-500 disabled:opacity-60"
+          >
+            {savingSharedCopy ? 'Guardando...' : 'Guardar carpeta'}
+          </button>
+        </div>
+      )}
 
       {isOwner && (
         <div className="rounded-xl border border-slate-700 bg-gradient-to-br from-slate-900/95 to-slate-800/85 p-3 sm:p-4 space-y-2">
