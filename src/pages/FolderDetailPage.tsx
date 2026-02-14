@@ -57,12 +57,20 @@ const FolderDetailPage: React.FC = () => {
 
   const loadFolderSongs = async () => {
     if (!id) return
-    const res = await supabase
+    let res = await supabase
       .from('folder_songs')
       .select('song_id, custom_transpose, order_index, songs(id,title,author,tone)')
       .eq('folder_id', id)
       .order('order_index', { ascending: true, nullsFirst: false })
       .order('song_id', { ascending: true })
+
+    if (res.error && String(res.error.message || '').toLowerCase().includes('order_index')) {
+      res = await supabase
+        .from('folder_songs')
+        .select('song_id, custom_transpose, songs(id,title,author,tone)')
+        .eq('folder_id', id)
+        .order('song_id', { ascending: true })
+    }
 
     if (res.data) {
       const folderSongsList = (res.data as FolderSong[]).map((row: any, idx: number) => ({

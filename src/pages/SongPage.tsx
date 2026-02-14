@@ -232,15 +232,23 @@ const SongPage: React.FC = () => {
         return
       }
 
-      const { data, error } = await supabase
+      let res = await supabase
         .from('folder_songs')
         .select('song_id, custom_transpose, order_index, songs(id, title)')
         .eq('folder_id', folderId)
         .order('order_index', { ascending: true, nullsFirst: false })
         .order('song_id', { ascending: true })
-      
-      if (!error && data) {
-        const songList = data.map((r: any) => ({
+
+      if (res.error && String(res.error.message || '').toLowerCase().includes('order_index')) {
+        res = await supabase
+          .from('folder_songs')
+          .select('song_id, custom_transpose, songs(id, title)')
+          .eq('folder_id', folderId)
+          .order('song_id', { ascending: true })
+      }
+
+      if (!res.error && res.data) {
+        const songList = res.data.map((r: any) => ({
           id: r.songs.id,
           title: r.songs.title,
           custom_transpose: r.custom_transpose || 0
