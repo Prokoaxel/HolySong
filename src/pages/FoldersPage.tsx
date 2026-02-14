@@ -11,7 +11,8 @@ const FoldersPage: React.FC = () => {
 
   const [folders, setFolders] = useState<Folder[]>([])
   const [newFolderName, setNewFolderName] = useState('')
-  const [newFolderEmoji, setNewFolderEmoji] = useState('??')
+  const DEFAULT_FOLDER_EMOJI = '📁'
+  const [newFolderEmoji, setNewFolderEmoji] = useState(DEFAULT_FOLDER_EMOJI)
   const [newFolderDescription, setNewFolderDescription] = useState('')
   const [search, setSearch] = useState('')
   const [creating, setCreating] = useState(false)
@@ -23,12 +24,12 @@ const FoldersPage: React.FC = () => {
   const [editEmojiPickerOpen, setEditEmojiPickerOpen] = useState(false)
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null)
   const [editFolderName, setEditFolderName] = useState('')
-  const [editFolderEmoji, setEditFolderEmoji] = useState('??')
+  const [editFolderEmoji, setEditFolderEmoji] = useState(DEFAULT_FOLDER_EMOJI)
   const [editFolderDescription, setEditFolderDescription] = useState('')
   const [savingEdit, setSavingEdit] = useState(false)
 
   const [supportsFolderMeta, setSupportsFolderMeta] = useState(true)
-  const EMOJI_OPTIONS = ['??', '??', '??', '??', '??', '??', '?', '??', '??', '??', '???', '??']
+  const EMOJI_OPTIONS = ['📁', '🎵', '🎶', '🙏', '🔥', '💙', '✨', '🕊️', '🎤', '📖', '🌟', '🛐']
 
   const LONG_PRESS_MS = 1500
   const pressTimerRef = useRef<number | null>(null)
@@ -37,6 +38,11 @@ const FoldersPage: React.FC = () => {
 
   const FOLDER_META_STORAGE_KEY = 'holysong.folderMeta.v1'
   const LOCAL_FOLDERS_STORAGE_KEY = 'holysong.localFolders.v1'
+  const normalizeFolderEmoji = (value?: string | null) => {
+    const clean = (value || '').trim()
+    if (!clean || clean.includes('?')) return DEFAULT_FOLDER_EMOJI
+    return clean
+  }
 
   const readLocalFolders = (): Folder[] => {
     try {
@@ -150,7 +156,7 @@ const FoldersPage: React.FC = () => {
   const openEditModal = (folder: Folder) => {
     setSelectedFolder(folder)
     setEditFolderName(folder.name || '')
-    setEditFolderEmoji(folder.emoji?.trim() || '??')
+    setEditFolderEmoji(normalizeFolderEmoji(folder.emoji))
     setEditFolderDescription(folder.description || '')
     setEditEmojiPickerOpen(false)
     setEditModalOpen(true)
@@ -164,7 +170,7 @@ const FoldersPage: React.FC = () => {
     const payloadWithMeta = {
       name: newFolderName.trim(),
       owner_id: user.id,
-      emoji: newFolderEmoji.trim() || '??',
+      emoji: newFolderEmoji.trim() || DEFAULT_FOLDER_EMOJI,
       description: newFolderDescription.trim() || null,
     }
 
@@ -213,7 +219,7 @@ const FoldersPage: React.FC = () => {
       writeLocalFolders([fallback, ...allLocal])
       setFolders(prev => [fallback, ...prev])
       setNewFolderName('')
-      setNewFolderEmoji('??')
+      setNewFolderEmoji(DEFAULT_FOLDER_EMOJI)
       setNewFolderDescription('')
       setEmojiPickerOpen(false)
       setCreateModalOpen(false)
@@ -226,7 +232,7 @@ const FoldersPage: React.FC = () => {
       const created = data as Folder
       setFolders(prev => [created, ...prev])
       setNewFolderName('')
-      setNewFolderEmoji('??')
+      setNewFolderEmoji(DEFAULT_FOLDER_EMOJI)
       setNewFolderDescription('')
       setEmojiPickerOpen(false)
       setCreateModalOpen(false)
@@ -244,7 +250,7 @@ const FoldersPage: React.FC = () => {
           ? {
               ...f,
               name: editFolderName.trim(),
-              emoji: editFolderEmoji.trim() || '??',
+              emoji: editFolderEmoji.trim() || DEFAULT_FOLDER_EMOJI,
               description: editFolderDescription.trim() || null,
             }
           : f,
@@ -261,7 +267,7 @@ const FoldersPage: React.FC = () => {
         .from('folders')
         .update({
           name: editFolderName.trim(),
-          emoji: editFolderEmoji.trim() || '??',
+          emoji: editFolderEmoji.trim() || DEFAULT_FOLDER_EMOJI,
           description: editFolderDescription.trim() || null,
         })
         .eq('id', selectedFolder.id)
@@ -287,7 +293,7 @@ const FoldersPage: React.FC = () => {
 
       const localMeta = readLocalFolderMeta()
       localMeta[selectedFolder.id] = {
-        emoji: editFolderEmoji.trim() || '??',
+        emoji: editFolderEmoji.trim() || DEFAULT_FOLDER_EMOJI,
         description: editFolderDescription.trim() || undefined,
       }
       writeLocalFolderMeta(localMeta)
@@ -299,7 +305,7 @@ const FoldersPage: React.FC = () => {
           ? {
               ...f,
               name: editFolderName.trim(),
-              emoji: editFolderEmoji.trim() || '??',
+              emoji: editFolderEmoji.trim() || DEFAULT_FOLDER_EMOJI,
               description: editFolderDescription.trim() || null,
             }
           : f,
@@ -396,7 +402,7 @@ const FoldersPage: React.FC = () => {
                 className="w-full select-none text-left px-3 sm:px-4 py-3 border-b border-slate-800/70 last:border-b-0 bg-slate-900/35 hover:bg-slate-800/70 transition-colors flex items-center gap-3"
               >
                 <span className="h-8 w-8 rounded-md border border-purple-500/40 bg-purple-500/10 text-purple-200 flex items-center justify-center flex-shrink-0 text-base">
-                  {folder.emoji?.trim() || '??'}
+                  {normalizeFolderEmoji(folder.emoji)}
                 </span>
 
                 <span className="flex-1 min-w-0">
