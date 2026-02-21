@@ -35,6 +35,7 @@ type SongViewerProps = {
   autoScroll?: boolean
   autoScrollSpeed?: number
   musicianMode?: boolean
+  lyricsBackground?: 'slate' | 'sepia' | 'night' | 'paper'
 }
 
 const NOTES_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
@@ -242,7 +243,8 @@ const SongViewerFixed: React.FC<SongViewerProps> = ({
   externalFontSize,
   autoScroll,
   autoScrollSpeed,
-  musicianMode = false
+  musicianMode = false,
+  lyricsBackground = 'slate'
 }) => {
   const [localInstrument] = useState<Instrument>('guitar')
   const instrument = controls?.instrument ?? localInstrument
@@ -453,7 +455,10 @@ const SongViewerFixed: React.FC<SongViewerProps> = ({
                 ref={el => chordBtnRefs.current[idx] = el}
                 className={
                   musicianMode
-                    ? 'mx-0.5 px-0.5 whitespace-nowrap text-[0.9em] font-bold text-orange-500 hover:text-orange-400 transition-colors'
+                    ? ('mx-0.5 px-0.5 whitespace-nowrap text-[0.95em] font-extrabold transition-colors ' +
+                      (lyricsBackground === 'paper'
+                        ? 'text-amber-800 hover:text-amber-700'
+                        : 'text-amber-300 hover:text-amber-200 [text-shadow:0_0_1px_rgba(0,0,0,0.95),0_1px_2px_rgba(0,0,0,0.8)]'))
                     : 'mx-0.5 px-2 py-1 whitespace-nowrap rounded-md border-2 text-[12px] font-bold bg-gradient-to-br from-teal-500/20 to-teal-600/20 border-teal-400/70 text-teal-200 hover:from-teal-500/30 hover:to-teal-600/30 hover:border-teal-300 hover:scale-110 transition-all shadow-lg shadow-teal-500/20'
                 }
                 onClick={() => {
@@ -499,6 +504,17 @@ const SongViewerFixed: React.FC<SongViewerProps> = ({
       </>
     )
   }
+  const lyricsBgClass =
+    lyricsBackground === 'sepia'
+      ? 'bg-amber-950/35'
+      : lyricsBackground === 'night'
+      ? 'bg-black/70'
+      : lyricsBackground === 'paper'
+      ? 'bg-stone-100/90'
+      : 'bg-slate-800/35'
+
+  const lyricsTextColor = lyricsBackground === 'paper' ? '#1f2937' : undefined
+
   return (
     <div className={`pt-0 px-0 md:px-1 pb-0 md:pb-1 h-full ${musicianMode ? 'text-slate-100' : 'text-slate-200'}`}>
       {/* Contenedor centrado */}
@@ -531,13 +547,14 @@ const SongViewerFixed: React.FC<SongViewerProps> = ({
             <div 
               ref={lyricsRef}
               className={
-                "song-content-container text-sm whitespace-pre relative rounded-lg transition-all duration-300 max-h-[70vh] overflow-auto scroll-dark pb-24 md:pb-6 " +
-                (commentMode ? "p-3 bg-slate-800/30 ring-2 ring-teal-400/30" : "")
+                `song-content-container text-sm whitespace-pre relative rounded-lg transition-all duration-300 max-h-[70vh] overflow-auto scroll-dark pb-24 md:pb-6 p-3 ${lyricsBgClass} ` +
+                (commentMode ? "ring-2 ring-teal-400/30" : "")
               }
               style={{ 
                 fontSize, 
                 lineHeight: musicianMode ? 1.32 : undefined,
                 fontFamily: musicianMode ? '"Courier New", Courier, monospace' : undefined,
+                color: lyricsTextColor,
                 userSelect: commentMode ? 'text' : 'auto',
                 scrollPaddingBottom: '8rem',
                 textShadow: musicianMode

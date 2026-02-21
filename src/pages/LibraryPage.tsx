@@ -28,6 +28,7 @@ const LibraryPage: React.FC = () => {
   const [menuSong, setMenuSong] = useState<SongListItem | null>(null)
   const [processingMenuAction, setProcessingMenuAction] = useState(false)
   const [versionDeleteModalOpen, setVersionDeleteModalOpen] = useState(false)
+  const [versionEditModalOpen, setVersionEditModalOpen] = useState(false)
   const [versionOptions, setVersionOptions] = useState<VersionOption[]>([])
 
   const longPressTimerRef = useRef<number | null>(null)
@@ -144,8 +145,52 @@ const LibraryPage: React.FC = () => {
   const handleEditSong = () => {
     if (!menuSong) return
     if (!requestSecurityCode('editar la cancion')) return
+
+    if ((menuSong.versionCount || 1) <= 1) {
+      setMenuSong(null)
+      navigate(`/app/import?songId=${menuSong.id}`)
+      return
+    }
+
+    const openEditVersionSelector = async () => {
+      try {
+        setProcessingMenuAction(true)
+        const { data, error } = await supabase
+          .from('song_versions')
+          .select('id,version_label')
+          .eq('song_id', menuSong.id)
+          .order('created_at', { ascending: true })
+
+        if (error) throw error
+
+        const options = (data || []).map((v: any) => ({
+          id: String(v.id),
+          label: String(v.version_label || 'Version'),
+        }))
+        setVersionOptions(options)
+        setVersionEditModalOpen(true)
+      } catch (err: any) {
+        console.error(err)
+        alert('No se pudieron cargar las versiones para editar: ' + (err?.message || ''))
+      } finally {
+        setProcessingMenuAction(false)
+      }
+    }
+
+    void openEditVersionSelector()
+  }
+
+  const handleEditBaseSong = () => {
+    if (!menuSong) return
+    setVersionEditModalOpen(false)
     setMenuSong(null)
     navigate(`/app/import?songId=${menuSong.id}`)
+  }
+
+  const handleEditVersion = (versionId: string) => {
+    setVersionEditModalOpen(false)
+    setMenuSong(null)
+    navigate(`/app/import?versionId=${versionId}`)
   }
 
   const handleCreateVersion = async () => {
@@ -425,7 +470,7 @@ const LibraryPage: React.FC = () => {
                 disabled={processingMenuAction}
                 className="w-full rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2.5 text-sm text-slate-100 hover:bg-slate-700 disabled:opacity-60"
               >
-                Editar letra
+                {(menuSong.versionCount || 1) > 1 ? 'Editar (elegir version)' : 'Editar letra'}
               </button>
               <button
                 onClick={handleCreateVersion}
@@ -487,6 +532,57 @@ const LibraryPage: React.FC = () => {
               </button>
               <button
                 onClick={() => setVersionDeleteModalOpen(false)}
+                disabled={processingMenuAction}
+                className="w-full rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2.5 text-sm text-slate-100 hover:bg-slate-700 disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+
+      {menuSong && versionEditModalOpen && createPortal(
+        <div className="fixed inset-0 z-[145]">
+          <button
+            className="absolute inset-0 bg-black/70"
+            onClick={() => !processingMenuAction && setVersionEditModalOpen(false)}
+            aria-label="Cerrar selector de versiones para editar"
+          />
+          <div className="absolute left-1/2 top-1/2 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-600 bg-slate-900 p-3 shadow-2xl">
+            <div className="mb-3">
+              <p className="text-sm font-semibold text-slate-100 truncate">{menuSong.title}</p>
+              <p className="text-[11px] text-slate-400 mt-1">Elegi que version queres editar.</p>
+            </div>
+
+            <div className="space-y-2 max-h-72 overflow-auto pr-1">
+              <button
+                onClick={handleEditBaseSong}
+                disabled={processingMenuAction}
+                className="w-full rounded-lg border border-teal-500/35 bg-teal-500/10 px-3 py-2 text-sm text-teal-100 hover:bg-teal-500/20 disabled:opacity-60 text-left"
+              >
+                Editar cancion base
+              </button>
+              {versionOptions.length === 0 ? (
+                <p className="text-[12px] text-slate-400">No se encontraron versiones extra para esta cancion.</p>
+              ) : (
+                versionOptions.map(v => (
+                  <button
+                    key={v.id}
+                    onClick={() => handleEditVersion(v.id)}
+                    disabled={processingMenuAction}
+                    className="w-full rounded-lg border border-purple-500/35 bg-purple-500/10 px-3 py-2 text-sm text-purple-100 hover:bg-purple-500/20 disabled:opacity-60 text-left"
+                  >
+                    Editar {v.label}
+                  </button>
+                ))
+              )}
+            </div>
+
+            <div className="mt-3">
+              <button
+                onClick={() => setVersionEditModalOpen(false)}
                 disabled={processingMenuAction}
                 className="w-full rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2.5 text-sm text-slate-100 hover:bg-slate-700 disabled:opacity-60"
               >

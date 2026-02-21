@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">HolySong</string>
+    <string name="title_activity_main">HolySong</string>
+    <string name="package_name">com.holysong.app</string>
+    <string name="custom_url_scheme">com.holysong.app</string>
+</resources>

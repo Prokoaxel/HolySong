@@ -43,6 +43,45 @@ export default defineConfig([
 ])
 ```
 
+## Mobile (Android + iOS) with Capacitor
+
+This repo is prepared to package the same app for Android and iOS using Capacitor.
+
+### One-time setup (already done in this repo)
+- `capacitor.config.ts` created
+- Native projects generated:
+  - `android/`
+  - `ios/`
+
+### Daily workflow
+1. Build web + sync native assets:
+   ```bash
+   npm run mobile:build
+   ```
+2. Open Android Studio:
+   ```bash
+   npm run mobile:android
+   ```
+3. Open Xcode (macOS required):
+   ```bash
+   npm run mobile:ios
+   ```
+
+### Extra commands
+- Sync only (without web build):
+  ```bash
+  npm run mobile:sync
+  ```
+- Copy only:
+  ```bash
+  npm run mobile:copy
+  ```
+
+### Notes
+- iOS compilation/signing requires macOS + Xcode.
+- Android can be built from Windows using Android Studio.
+- Every web change must be followed by `npm run mobile:build` before generating APK/IPA.
+
 ## Serverless API (OCR and folder ops)
 
 This project includes serverless API endpoints (for Vercel) under the `api/` directory:

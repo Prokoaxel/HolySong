@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabaseClient'
+import { cacheFoldersForUser, readCachedFoldersForUser } from '../lib/offlineFolders'
 import type { Folder } from '../types'
 
 const FoldersPage: React.FC = () => {
@@ -98,6 +99,7 @@ const FoldersPage: React.FC = () => {
           share_role: null,
         })) as Folder[]
         setFolders(owned)
+        cacheFoldersForUser(user.id, owned)
         return
       }
 
@@ -109,6 +111,12 @@ const FoldersPage: React.FC = () => {
 
       if (basicQuery.error) {
         console.error(basicQuery.error)
+        const cached = readCachedFoldersForUser(user.id)
+        if (cached.length > 0) {
+          setFolders(cached)
+          alert('Sin conexion: mostrando carpetas guardadas localmente.')
+          return
+        }
         const localOnly = readLocalFolders().filter(f => f.owner_id === user.id)
         setFolders(localOnly)
         return
@@ -124,10 +132,16 @@ const FoldersPage: React.FC = () => {
         share_role: null,
       }))
       setFolders(merged as Folder[])
+      cacheFoldersForUser(user.id, merged as Folder[])
     }
 
     loadFolders()
   }, [user])
+
+  useEffect(() => {
+    if (!user) return
+    cacheFoldersForUser(user.id, folders)
+  }, [folders, user])
 
   const filteredFolders = useMemo(() => {
     const term = search.trim().toLowerCase()

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { cacheFolderDetail, readCachedFolderDetail } from '../lib/offlineFolders'
 import type { Song, FolderSong } from '../types'
 import ArtistAvatar from '../components/ui/ArtistAvatar'
 
@@ -56,8 +57,8 @@ const FolderDetailPage: React.FC = () => {
     return `${NOTES[(idx + steps + 12 * 10) % 12]}${suffix}`
   }
 
-  const loadFolderSongs = async () => {
-    if (!id) return
+  const loadFolderSongs = async (): Promise<FolderSong[] | null> => {
+    if (!id) return null
     let res = await supabase
       .from('folder_songs')
       .select('song_id, custom_transpose, order_index, songs(id,title,author,tone)')
@@ -82,7 +83,9 @@ const FolderDetailPage: React.FC = () => {
       const list = folderSongsList.map((r: any) => r.songs as Song)
       setSongs(list)
       setCurrentIndex(list.length ? 0 : null)
+      return folderSongsList
     }
+    return null
   }
 
   const readLocalFolderSongs = (): Record<string, { song_id: string; custom_transpose: number; order_index: number }[]> => {
@@ -204,12 +207,41 @@ const FolderDetailPage: React.FC = () => {
         setLinkShareEnabled(Boolean((folderRes.data as any).is_link_shared))
       }
 
-      await loadFolderSongs()
+      const loadedFolderSongs = await loadFolderSongs()
 
       const all = await supabase.from('songs').select('id,title,author,tone').order('title', {
         ascending: true,
       })
       if (all.data) setAllSongs(all.data as Song[])
+
+      if (folderRes.data && loadedFolderSongs && all.data) {
+        cacheFolderDetail({
+          folderId: id,
+          folderName: (folderRes.data as any).name || 'Carpeta',
+          ownerId: (folderRes.data as any).owner_id || null,
+          isOwner: (folderRes.data as any).owner_id === user.id,
+          linkShareEnabled: Boolean((folderRes.data as any).is_link_shared),
+          supportsLinkShare,
+          folderSongs: loadedFolderSongs,
+          allSongs: all.data as Song[],
+        })
+      } else {
+        const cached = readCachedFolderDetail(id)
+        if (cached) {
+          setFolderName(cached.folderName)
+          setIsOwner(cached.ownerId === user.id || cached.isOwner)
+          setLinkShareEnabled(cached.linkShareEnabled)
+          setSupportsLinkShare(cached.supportsLinkShare)
+          setFolderSongs(cached.folderSongs)
+          const cachedSongs = cached.folderSongs
+            .map(fs => fs.songs as Song)
+            .filter(Boolean)
+          setSongs(cachedSongs)
+          setAllSongs(cached.allSongs)
+          setCurrentIndex(cachedSongs.length ? 0 : null)
+          alert('Sin conexion: mostrando la ultima carpeta guardada en este dispositivo.')
+        }
+      }
     }
 
     load()

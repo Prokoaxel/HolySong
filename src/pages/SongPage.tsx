@@ -8,6 +8,7 @@ import { cacheSongDetail, readCachedSongDetail } from '../lib/offlineSongs'
 import type { DbSong, DbVersion, Comment } from '../types'
 
 type Instrument = 'guitar' | 'piano' | 'bass'
+type LyricsBg = 'slate' | 'sepia' | 'night' | 'paper'
 
 /* NOTE: handleDeleteVersion moved inside component so it can access state setters */
 
@@ -61,7 +62,9 @@ const SongPage: React.FC = () => {
   const [controlsOpen, setControlsOpen] = useState<boolean>(false)
   // Mobile transpose panel toggle
   const [transposeOpen, setTransposeOpen] = useState<boolean>(false)
+  const [lyricsBg, setLyricsBg] = useState<LyricsBg>('slate')
   const LOCAL_FOLDER_SONGS_STORAGE_KEY = 'holysong.localFolderSongs.v1'
+  const LYRICS_BG_STORAGE_PREFIX = 'holysong.lyricsBgByEmail.v1:'
 
   const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
   const FLAT_TO_SHARP: Record<string, string> = { Db: 'C#', Eb: 'D#', Gb: 'F#', Ab: 'G#', Bb: 'A#' }
@@ -176,6 +179,34 @@ const SongPage: React.FC = () => {
     }
     loadFolders()
   }, [user])
+
+  useEffect(() => {
+    const email = (user?.email || '').trim().toLowerCase()
+    if (!email) {
+      setLyricsBg('slate')
+      return
+    }
+    try {
+      const raw = localStorage.getItem(`${LYRICS_BG_STORAGE_PREFIX}${email}`)
+      if (raw === 'slate' || raw === 'sepia' || raw === 'night' || raw === 'paper') {
+        setLyricsBg(raw)
+      } else {
+        setLyricsBg('slate')
+      }
+    } catch {
+      setLyricsBg('slate')
+    }
+  }, [user?.email])
+
+  useEffect(() => {
+    const email = (user?.email || '').trim().toLowerCase()
+    if (!email) return
+    try {
+      localStorage.setItem(`${LYRICS_BG_STORAGE_PREFIX}${email}`, lyricsBg)
+    } catch {
+      // ignore storage errors
+    }
+  }, [lyricsBg, user?.email])
 
   // Cargar comentarios de la canción FILTRADOS POR VERSION
   useEffect(() => {
@@ -684,14 +715,61 @@ const SongPage: React.FC = () => {
       </div>
     )
   }
-  // Reusable: contenido del panel izquierdo (usado en desktop y en el modal movil)
-  const LeftPanelContent = () => (
+  // Reusable: contenido del panel izquierdo (desktop completo / mobile compacto)
+  const LeftPanelContent: React.FC<{ compact?: boolean }> = ({ compact = false }) => (
     <>
-      <div className="rounded-lg bg-slate-900/90 border border-slate-700 p-1.5">
+      {!compact && (
+      <div className="rounded-lg bg-slate-900/95 border border-slate-700 p-2">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[11px] font-semibold text-teal-300 uppercase tracking-wide">Transposer</p>
+          <span className="text-[11px] font-bold text-teal-200">{currentTone || song?.tone || 'C'}</span>
+        </div>
+        <div className="grid grid-cols-4 gap-1 mb-2">
+          {['C', 'D', 'E', 'F', 'G', 'A', 'B'].map(n => (
+            <button
+              key={n}
+              onClick={() => setTransposeSteps(computeStepsTo(n))}
+              className={'rounded py-1 text-[10px] font-bold transition-all active:scale-95 ' + (currentToneRoot === n ? 'bg-teal-400 text-slate-950' : 'bg-slate-800 border border-slate-700 text-slate-300')}
+            >
+              {n}
+            </button>
+          ))}
+          <button onClick={() => setTransposeSteps(0)} className="rounded py-1 text-[9px] font-bold bg-slate-800 border border-slate-700 text-slate-400" title="Reset">R</button>
+        </div>
+        <div className="grid grid-cols-2 gap-1">
+          <button onClick={() => setTransposeSteps(s => Math.max(-12, s - 1))} className="rounded bg-slate-800 border border-slate-700 py-1 text-[10px] font-semibold text-slate-300">-1/2</button>
+          <button onClick={() => setTransposeSteps(s => Math.min(12, s + 1))} className="rounded bg-slate-800 border border-slate-700 py-1 text-[10px] font-semibold text-slate-300">+1/2</button>
+        </div>
+      </div>
+      )}
+
+      {!compact && (
+      <div className="rounded-lg bg-slate-900/95 border border-slate-700 p-2">
+        <p className="text-[11px] font-semibold text-purple-300 uppercase tracking-wide mb-2">Carpeta</p>
+        <button
+          onClick={handleAddToFolder}
+          className="w-full rounded-md bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/50 text-purple-100 text-[11px] font-semibold py-2 transition-all active:scale-95"
+        >
+          Anadir a carpeta
+        </button>
+      </div>
+      )}
+
+      <div className="rounded-lg bg-slate-900/95 border border-slate-700 p-2">
+        <p className="text-[11px] font-semibold text-amber-300 uppercase tracking-wide mb-2">Configuracion</p>
         <div className="grid grid-cols-2 gap-1.5">
           <button onClick={() => setFontSize(f => Math.max(10, f - 1))} className="h-8 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-semibold transition-all active:scale-95">A-</button>
           <button onClick={() => setFontSize(f => Math.min(28, f + 1))} className="h-8 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-semibold transition-all active:scale-95">A+</button>
-          <button onClick={() => setVersionsOpen(v => !v)} className="col-span-2 h-6 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[9px] font-semibold tracking-wide transition-all active:scale-95">VERSIONES</button>
+          {!compact && (
+            <>
+              <button onClick={() => setCapo(c => Math.max(0, c - 1))} className="h-8 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-semibold transition-all active:scale-95">Capo-</button>
+              <button onClick={() => setCapo(c => Math.min(12, c + 1))} className="h-8 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-semibold transition-all active:scale-95">Capo+</button>
+              <button onClick={() => setInstrument('guitar')} className={'h-8 rounded-md border text-[10px] font-semibold transition-all active:scale-95 ' + (instrument === 'guitar' ? 'bg-teal-500/20 border-teal-400 text-teal-200' : 'bg-slate-800 border-slate-700 text-slate-300')}>Guitarra</button>
+              <button onClick={() => setInstrument('piano')} className={'h-8 rounded-md border text-[10px] font-semibold transition-all active:scale-95 ' + (instrument === 'piano' ? 'bg-teal-500/20 border-teal-400 text-teal-200' : 'bg-slate-800 border-slate-700 text-slate-300')}>Piano</button>
+              <button onClick={() => setInstrument('bass')} className={'col-span-2 h-8 rounded-md border text-[10px] font-semibold transition-all active:scale-95 ' + (instrument === 'bass' ? 'bg-teal-500/20 border-teal-400 text-teal-200' : 'bg-slate-800 border-slate-700 text-slate-300')}>Bajo</button>
+            </>
+          )}
+          <button onClick={() => setVersionsOpen(v => !v)} className="col-span-2 h-7 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[10px] font-semibold tracking-wide transition-all active:scale-95">VERSIONES</button>
         </div>
       </div>
 
@@ -724,6 +802,34 @@ const SongPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <div className="rounded-lg bg-slate-900/95 border border-slate-700 p-2">
+        <p className="text-[10px] text-slate-400 mb-1">Fondo de letra</p>
+        <div className={'grid gap-1.5 ' + (compact ? 'grid-cols-2' : 'grid-cols-4')}>
+          {[
+            { id: 'slate' as LyricsBg, label: 'Oscuro', cls: 'bg-slate-700', btn: 'bg-slate-600' },
+            { id: 'sepia' as LyricsBg, label: 'Sepia', cls: 'bg-amber-900/70', btn: 'bg-amber-700' },
+            { id: 'night' as LyricsBg, label: 'Noche', cls: 'bg-black', btn: 'bg-slate-950' },
+            { id: 'paper' as LyricsBg, label: 'Papel', cls: 'bg-stone-200', btn: 'bg-stone-200' },
+          ].map(opt => (
+            <button
+              key={opt.id}
+              onClick={() => setLyricsBg(opt.id)}
+              className={
+                'rounded-md border-2 transition-all active:scale-95 flex items-center justify-center ' +
+                (compact
+                  ? `h-12 ${opt.btn} ${(lyricsBg === opt.id ? 'border-teal-300 ring-2 ring-teal-500/60' : 'border-slate-400')}`
+                  : 'h-8 px-1 text-[9px] font-semibold ' + (lyricsBg === opt.id ? 'border-teal-400 text-teal-100 bg-slate-800' : 'border-slate-700 text-slate-300 bg-slate-900'))
+              }
+              title={opt.label}
+            >
+              <span className={'inline-block rounded-full border ' + (compact ? 'w-7 h-7 border-slate-300 shadow-[0_0_0_1px_rgba(0,0,0,0.25)]' : 'w-3 h-3 mr-1 align-middle border-slate-500 ') + opt.cls} />
+              {compact && lyricsBg === opt.id && <span className="ml-1 text-[11px] font-black text-teal-300">✓</span>}
+              {!compact && opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
     </>
   )
 
@@ -788,8 +894,7 @@ const SongPage: React.FC = () => {
             onToggleComment={setExpandedCommentId}
             onDeleteComment={handleDeleteComment}
             currentUserId={user?.id}
-            onSwipePrev={folderId && folderSongs.length > 0 ? goPrevInFolder : undefined}
-            onSwipeNext={folderId && folderSongs.length > 0 ? goNextInFolder : undefined}
+            lyricsBackground={lyricsBg}
             controls={{
               fontSize,
               setFontSize,
@@ -923,7 +1028,7 @@ const SongPage: React.FC = () => {
               </button>
             </div>
             <div className="flex flex-col gap-2">
-              <LeftPanelContent />
+              <LeftPanelContent compact />
             </div>
           </div>
         </div>

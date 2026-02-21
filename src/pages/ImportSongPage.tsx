@@ -367,7 +367,7 @@ const ImportSongPage: React.FC = () => {
     : 'Guardar canción'
 
   return (
-    <div className="max-w-5xl mx-auto space-y-3 sm:space-y-4 fade-in py-2 sm:py-4">
+    <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4 fade-in py-2 sm:py-4">
       {/* Header mejorado con gradiente y animación */}
       <div className="relative rounded-lg sm:rounded-xl bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900 border border-purple-400/40 sm:border-2 p-3 sm:p-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-purple-500/10 to-pink-500/5 animate-[shimmer_3s_ease-in-out_infinite]" />
@@ -581,7 +581,7 @@ const ImportSongPage: React.FC = () => {
               <textarea
                 value={form.content}
                 onChange={handleChange('content')}
-                className="w-full h-48 sm:h-64 rounded-lg bg-slate-900/80 border border-slate-700 sm:border-2 focus:border-purple-500/50 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-mono resize-none outline-none transition-all"
+                className="w-full h-[48vh] min-h-[360px] sm:h-[56vh] sm:min-h-[520px] rounded-lg bg-slate-900/80 border border-slate-700 sm:border-2 focus:border-purple-500/50 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-mono resize-none outline-none transition-all"
                 placeholder="Pegá aquí la letra con los acordes (Em, Bm, C#, etc.)"
               />
             </div>
